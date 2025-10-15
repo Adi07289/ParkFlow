@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums for better type safety and data integrity
+enum VehicleType {
+  CAR
+  BIKE
+  EV
+  HANDICAP_ACCESSIBLE
+}
+
+enum SlotType {
+  REGULAR
+  COMPACT
+  EV
+  HANDICAP_ACCESSIBLE
+}
+
+enum SlotStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum BillingType {
+  HOURLY
+  DAY_PASS
+}
+
+// Vehicle model - represents each unique vehicle that parks
+model Vehicle {
+  id           String        @id @default(uuid())
+  numberPlate  String        @unique
+  vehicleType  VehicleType
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relationships
+  sessions     ParkingSession[]
+  
+  @@map("vehicles")
+}
+
+// ParkingSlot model - represents physical parking spaces
+model ParkingSlot {
+  id           String        @id @default(uuid())
+  slotNumber   String        @unique  // e.g., "B1-12", "A2-05"
+  slotType     SlotType
+  status       SlotStatus    @default(AVAILABLE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relationships
+  sessions     ParkingSession[]
+  
+  @@map("parking_slots")
+}
+
+// ParkingSession model - represents each parking instance
+model ParkingSession {
+  id            String        @id @default(uuid())
+  vehicleId     String
+  slotId        String
+  entryTime     DateTime      @default(now())
+  exitTime      DateTime?     // Null until vehicle exits
+  status        SessionStatus @default(ACTIVE)
+  billingType   BillingType
+  billingAmount Decimal?      @db.Decimal(10, 2) // Fixed for day pass, calculated on exit for hourly
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relationships
+  vehicle       Vehicle       @relation(fields: [vehicleId], references: [id])
+  slot          ParkingSlot   @relation(fields: [slotId], references: [id])
+  
+  @@map("parking_sessions")
+}
+
+// Optional: Pricing configuration model for dynamic pricing
+model PricingConfig {
+  id              String    @id @default(uuid())
+  vehicleType     VehicleType
+  billingType     BillingType
+  hourlyRate      Decimal?  @db.Decimal(10, 2) // Rate per hour for hourly billing
+  dayPassRate     Decimal?  @db.Decimal(10, 2) // Fixed rate for day pass
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([vehicleType, billingType])
+  @@map("pricing_config")
+}
+
+// Optional: User model for parking operators/staff
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      String   @default("OPERATOR") // OPERATOR, ADMIN, MANAGER
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
