@@ -1,0 +1,261 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Core Enums ─────────────────────────────────────────────────
+enum VehicleType {
+  CAR
+  BIKE
+  EV
+  HANDICAP_ACCESSIBLE
+}
+
+enum SlotType {
+  REGULAR
+  COMPACT
+  EV
+  HANDICAP_ACCESSIBLE
+}
+
+enum SlotStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum BillingType {
+  HOURLY
+  DAY_PASS
+}
+
+// ─── Phase 2: EV Charging Enums ─────────────────────────────────
+enum EVChargingStatus {
+  CHARGING
+  FULLY_CHARGED
+  IDLE
+}
+
+enum EVQueueStatus {
+  WAITING
+  NOTIFIED
+  EXPIRED
+  FULFILLED
+}
+
+// ─── Phase 3: Alert Enums ───────────────────────────────────────
+enum AlertType {
+  OVERSTAY
+  UNAUTHORIZED_AREA
+  RAPID_ENTRY
+  REPEATED_OFFENDER
+  MANUAL
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ─── Phase 4: Subscription & Swap Enums ─────────────────────────
+enum SubscriptionTier {
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum ReservationSwapStatus {
+  LISTED
+  CLAIMED
+  EXPIRED
+  CANCELLED
+}
+
+// ─── Core Models ────────────────────────────────────────────────
+
+// Vehicle model - represents each unique vehicle that parks
+model Vehicle {
+  id           String        @id @default(uuid())
+  numberPlate  String        @unique
+  vehicleType  VehicleType
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relationships
+  sessions       ParkingSession[]
+  evQueueEntries EVChargingQueue[]
+  alerts         ParkingAlert[]
+  
+  @@map("vehicles")
+}
+
+// ParkingSlot model - represents physical parking spaces
+model ParkingSlot {
+  id           String        @id @default(uuid())
+  slotNumber   String        @unique  // e.g., "B1-12", "A2-05"
+  slotType     SlotType
+  status       SlotStatus    @default(AVAILABLE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relationships
+  sessions         ParkingSession[]
+  reservationSwaps ReservationSwap[]
+  
+  @@map("parking_slots")
+}
+
+// ParkingSession model - represents each parking instance
+model ParkingSession {
+  id               String            @id @default(uuid())
+  vehicleId        String
+  slotId           String
+  entryTime        DateTime          @default(now())
+  exitTime         DateTime?         // Null until vehicle exits
+  status           SessionStatus     @default(ACTIVE)
+  billingType      BillingType
+  billingAmount    Decimal?          @db.Decimal(10, 2)
+  chargingStatus   EVChargingStatus? // Only for EV sessions
+  idleFeeAmount    Decimal?          @db.Decimal(10, 2) // Accumulated idle fee for EV
+  chargeCompleteAt DateTime?         // When EV finished charging
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  // Relationships
+  vehicle          Vehicle           @relation(fields: [vehicleId], references: [id])
+  slot             ParkingSlot       @relation(fields: [slotId], references: [id])
+  alerts           ParkingAlert[]
+  reservationSwaps ReservationSwap[]
+  
+  @@map("parking_sessions")
+}
+
+// Optional: Pricing configuration model for dynamic pricing
+model PricingConfig {
+  id              String    @id @default(uuid())
+  vehicleType     VehicleType
+  billingType     BillingType
+  hourlyRate      Decimal?  @db.Decimal(10, 2)
+  dayPassRate     Decimal?  @db.Decimal(10, 2)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([vehicleType, billingType])
+  @@map("pricing_config")
+}
+
+// User model for parking operators/staff
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  role          String         @default("OPERATOR")
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relationships
+  subscriptions Subscription[]
+
+  @@map("users")
+}
+
+// ─── Phase 2: EV Charging Queue ─────────────────────────────────
+
+model EVChargingQueue {
+  id          String        @id @default(uuid())
+  vehicleId   String
+  requestedAt DateTime      @default(now())
+  notifiedAt  DateTime?
+  status      EVQueueStatus @default(WAITING)
+  priority    Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  vehicle     Vehicle       @relation(fields: [vehicleId], references: [id])
+  
+  @@map("ev_charging_queue")
+}
+
+// ─── Phase 3: Parking Alerts ────────────────────────────────────
+
+model ParkingAlert {
+  id          String        @id @default(uuid())
+  sessionId   String?
+  vehicleId   String?
+  alertType   AlertType
+  severity    AlertSeverity
+  message     String
+  isResolved  Boolean       @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  session     ParkingSession? @relation(fields: [sessionId], references: [id])
+  vehicle     Vehicle?        @relation(fields: [vehicleId], references: [id])
+  
+  @@map("parking_alerts")
+}
+
+// ─── Phase 4: Subscriptions & Loyalty ───────────────────────────
+
+model Subscription {
+  id            String             @id @default(uuid())
+  userId        String
+  tier          SubscriptionTier
+  status        SubscriptionStatus @default(ACTIVE)
+  startDate     DateTime           @default(now())
+  endDate       DateTime
+  loyaltyPoints Int                @default(0)
+  totalSpent    Decimal            @default(0) @db.Decimal(10, 2)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  
+  user          User               @relation(fields: [userId], references: [id])
+  
+  @@map("subscriptions")
+}
+
+// ─── Phase 4: Reservation Swap / Secondary Market ───────────────
+
+model ReservationSwap {
+  id              String                @id @default(uuid())
+  originalUserId  String
+  claimedByUserId String?
+  sessionId       String
+  slotId          String
+  originalPrice   Decimal               @db.Decimal(10, 2)
+  listingPrice    Decimal               @db.Decimal(10, 2)
+  status          ReservationSwapStatus @default(LISTED)
+  listedAt        DateTime              @default(now())
+  claimedAt       DateTime?
+  expiresAt       DateTime
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  
+  session         ParkingSession        @relation(fields: [sessionId], references: [id])
+  slot            ParkingSlot           @relation(fields: [slotId], references: [id])
+  
+  @@map("reservation_swaps")
+}

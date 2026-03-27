@@ -1,0 +1,2806 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"UserResponse": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string"
+					},
+					"updatedAt": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"id",
+					"email",
+					"createdAt",
+					"updatedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateUserRequest": {
+				"properties": {
+					"email": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"email"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateUserRequest": {
+				"properties": {
+					"email": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.string-Array_": {
+				"properties": {},
+				"additionalProperties": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"EnumResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"data": {
+						"$ref": "#/components/schemas/Record_string.string-Array_"
+					}
+				},
+				"required": [
+					"success",
+					"data"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ConfigResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"data": {
+						"properties": {
+							"systemConfig": {
+								"properties": {
+									"supportedFeatures": {
+										"items": {
+											"type": "string"
+										},
+										"type": "array"
+									},
+									"defaultBillingType": {
+										"type": "string"
+									},
+									"apiVersion": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"supportedFeatures",
+									"defaultBillingType",
+									"apiVersion"
+								],
+								"type": "object"
+							},
+							"enums": {
+								"properties": {
+									"billingTypes": {
+										"items": {
+											"type": "string"
+										},
+										"type": "array"
+									},
+									"sessionStatuses": {
+										"items": {
+											"type": "string"
+										},
+										"type": "array"
+									},
+									"slotStatuses": {
+										"items": {
+											"type": "string"
+										},
+										"type": "array"
+									},
+									"slotTypes": {
+										"items": {
+											"type": "string"
+										},
+										"type": "array"
+									},
+									"vehicleTypes": {
+										"items": {
+											"type": "string"
+										},
+										"type": "array"
+									}
+								},
+								"required": [
+									"billingTypes",
+									"sessionStatuses",
+									"slotStatuses",
+									"slotTypes",
+									"vehicleTypes"
+								],
+								"type": "object"
+							}
+						},
+						"required": [
+							"systemConfig",
+							"enums"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"success",
+					"data"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SlotResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"data": {}
+				},
+				"required": [
+					"success"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateSlotRequest": {
+				"properties": {
+					"slotNumber": {
+						"type": "string"
+					},
+					"slotType": {
+						"type": "string",
+						"enum": [
+							"REGULAR",
+							"COMPACT",
+							"EV",
+							"HANDICAP_ACCESSIBLE"
+						]
+					}
+				},
+				"required": [
+					"slotNumber",
+					"slotType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UpdateSlotRequest": {
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"AVAILABLE",
+							"OCCUPIED",
+							"MAINTENANCE"
+						]
+					},
+					"slotType": {
+						"type": "string",
+						"enum": [
+							"REGULAR",
+							"COMPACT",
+							"EV",
+							"HANDICAP_ACCESSIBLE"
+						]
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AutoAssignResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"slot": {
+						"properties": {
+							"slotType": {
+								"type": "string",
+								"enum": [
+									"REGULAR",
+									"COMPACT",
+									"EV",
+									"HANDICAP_ACCESSIBLE"
+								]
+							},
+							"slotNumber": {
+								"type": "string"
+							},
+							"id": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"slotType",
+							"slotNumber",
+							"id"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"success"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AutoAssignRequest": {
+				"properties": {
+					"vehicleType": {
+						"type": "string",
+						"enum": [
+							"CAR",
+							"BIKE",
+							"EV",
+							"HANDICAP_ACCESSIBLE"
+						]
+					}
+				},
+				"required": [
+					"vehicleType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SessionResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"data": {}
+				},
+				"required": [
+					"success"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ExtendSessionRequest": {
+				"properties": {
+					"sessionId": {
+						"type": "string"
+					},
+					"billingType": {
+						"type": "string",
+						"enum": [
+							"HOURLY",
+							"DAY_PASS"
+						]
+					}
+				},
+				"required": [
+					"sessionId",
+					"billingType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VehicleEntryResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"data": {
+						"properties": {
+							"billingType": {
+								"type": "string",
+								"enum": [
+									"HOURLY",
+									"DAY_PASS"
+								]
+							},
+							"entryTime": {
+								"type": "string",
+								"format": "date-time"
+							},
+							"slotNumber": {
+								"type": "string"
+							},
+							"slotId": {
+								"type": "string"
+							},
+							"vehicleId": {
+								"type": "string"
+							},
+							"sessionId": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"billingType",
+							"entryTime",
+							"slotNumber",
+							"slotId",
+							"vehicleId",
+							"sessionId"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VehicleEntryRequest": {
+				"properties": {
+					"numberPlate": {
+						"type": "string"
+					},
+					"vehicleType": {
+						"type": "string",
+						"enum": [
+							"CAR",
+							"BIKE",
+							"EV",
+							"HANDICAP_ACCESSIBLE"
+						]
+					},
+					"billingType": {
+						"type": "string",
+						"enum": [
+							"HOURLY",
+							"DAY_PASS"
+						]
+					},
+					"slotId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"numberPlate",
+					"vehicleType",
+					"billingType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SearchVehicleResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"data": {
+						"properties": {
+							"parkingHistory": {
+								"items": {
+									"properties": {
+										"duration": {
+											"type": "string"
+										},
+										"billingAmount": {
+											"type": "number",
+											"format": "double"
+										},
+										"exitTime": {
+											"type": "string",
+											"format": "date-time",
+											"nullable": true
+										},
+										"entryTime": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"slotNumber": {
+											"type": "string"
+										},
+										"id": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"duration",
+										"billingAmount",
+										"exitTime",
+										"entryTime",
+										"slotNumber",
+										"id"
+									],
+									"type": "object"
+								},
+								"type": "array"
+							},
+							"currentSession": {
+								"properties": {
+									"status": {
+										"type": "string"
+									},
+									"billingType": {
+										"type": "string",
+										"enum": [
+											"HOURLY",
+											"DAY_PASS"
+										]
+									},
+									"entryTime": {
+										"type": "string",
+										"format": "date-time"
+									},
+									"slotNumber": {
+										"type": "string"
+									},
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"status",
+									"billingType",
+									"entryTime",
+									"slotNumber",
+									"id"
+								],
+								"type": "object"
+							},
+							"vehicle": {
+								"properties": {
+									"vehicleType": {
+										"type": "string",
+										"enum": [
+											"CAR",
+											"BIKE",
+											"EV",
+											"HANDICAP_ACCESSIBLE"
+										]
+									},
+									"numberPlate": {
+										"type": "string"
+									},
+									"id": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"vehicleType",
+									"numberPlate",
+									"id"
+								],
+								"type": "object"
+							}
+						},
+						"required": [
+							"parkingHistory",
+							"vehicle"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"success"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VehicleExitResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"data": {
+						"properties": {
+							"billingType": {
+								"type": "string",
+								"enum": [
+									"HOURLY",
+									"DAY_PASS"
+								]
+							},
+							"billingAmount": {
+								"type": "number",
+								"format": "double"
+							},
+							"duration": {
+								"type": "string"
+							},
+							"exitTime": {
+								"type": "string",
+								"format": "date-time"
+							},
+							"entryTime": {
+								"type": "string",
+								"format": "date-time"
+							},
+							"sessionId": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"billingType",
+							"billingAmount",
+							"duration",
+							"exitTime",
+							"entryTime",
+							"sessionId"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VehicleExitRequest": {
+				"properties": {
+					"numberPlate": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"numberPlate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"DashboardStats": {
+				"properties": {
+					"totalSlots": {
+						"type": "number",
+						"format": "double"
+					},
+					"occupiedSlots": {
+						"type": "number",
+						"format": "double"
+					},
+					"availableSlots": {
+						"type": "number",
+						"format": "double"
+					},
+					"maintenanceSlots": {
+						"type": "number",
+						"format": "double"
+					},
+					"occupancyRate": {
+						"type": "number",
+						"format": "double"
+					},
+					"slotsByType": {
+						"items": {
+							"properties": {
+								"maintenance": {
+									"type": "number",
+									"format": "double"
+								},
+								"available": {
+									"type": "number",
+									"format": "double"
+								},
+								"occupied": {
+									"type": "number",
+									"format": "double"
+								},
+								"total": {
+									"type": "number",
+									"format": "double"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"REGULAR",
+										"COMPACT",
+										"EV",
+										"HANDICAP_ACCESSIBLE"
+									]
+								}
+							},
+							"required": [
+								"maintenance",
+								"available",
+								"occupied",
+								"total",
+								"type"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"vehiclesByType": {
+						"items": {
+							"properties": {
+								"percentage": {
+									"type": "number",
+									"format": "double"
+								},
+								"count": {
+									"type": "number",
+									"format": "double"
+								},
+								"type": {
+									"type": "string",
+									"enum": [
+										"CAR",
+										"BIKE",
+										"EV",
+										"HANDICAP_ACCESSIBLE"
+									]
+								}
+							},
+							"required": [
+								"percentage",
+								"count",
+								"type"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"totalSlots",
+					"occupiedSlots",
+					"availableSlots",
+					"maintenanceSlots",
+					"occupancyRate",
+					"slotsByType",
+					"vehiclesByType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RevenueStats": {
+				"properties": {
+					"today": {
+						"type": "number",
+						"format": "double"
+					},
+					"thisWeek": {
+						"type": "number",
+						"format": "double"
+					},
+					"thisMonth": {
+						"type": "number",
+						"format": "double"
+					},
+					"byBillingType": {
+						"properties": {
+							"dayPass": {
+								"type": "number",
+								"format": "double"
+							},
+							"hourly": {
+								"type": "number",
+								"format": "double"
+							}
+						},
+						"required": [
+							"dayPass",
+							"hourly"
+						],
+						"type": "object"
+					}
+				},
+				"required": [
+					"today",
+					"thisWeek",
+					"thisMonth",
+					"byBillingType"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ActivityStats": {
+				"properties": {
+					"entriesLastHour": {
+						"type": "number",
+						"format": "double"
+					},
+					"exitsLastHour": {
+						"type": "number",
+						"format": "double"
+					},
+					"averageParkingDuration": {
+						"type": "string"
+					},
+					"peakHours": {
+						"items": {
+							"properties": {
+								"entries": {
+									"type": "number",
+									"format": "double"
+								},
+								"hour": {
+									"type": "number",
+									"format": "double"
+								}
+							},
+							"required": [
+								"entries",
+								"hour"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"entriesLastHour",
+					"exitsLastHour",
+					"averageParkingDuration",
+					"peakHours"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SendOTPResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"otp": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"success",
+					"message",
+					"otp"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"SendOTPRequest": {
+				"properties": {
+					"email": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"email"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VerifyOTPResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"user": {
+						"properties": {
+							"createdAt": {
+								"type": "string",
+								"format": "date-time"
+							},
+							"email": {
+								"type": "string"
+							},
+							"id": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"createdAt",
+							"email",
+							"id"
+						],
+						"type": "object"
+					},
+					"token": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VerifyOTPRequest": {
+				"properties": {
+					"email": {
+						"type": "string"
+					},
+					"otp": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"email",
+					"otp"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuthUser": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"email",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuthResponse": {
+				"properties": {
+					"success": {
+						"type": "boolean"
+					},
+					"message": {
+						"type": "string"
+					},
+					"user": {
+						"$ref": "#/components/schemas/AuthUser"
+					}
+				},
+				"required": [
+					"success",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {
+			"jwt": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "JWT"
+			}
+		}
+	},
+	"paths": {
+		"/api/users": {
+			"get": {
+				"operationId": "GetUsers",
+				"responses": {
+					"200": {
+						"description": "Users retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/UserResponse"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get all users",
+				"summary": "Retrieve all users",
+				"tags": [
+					"Users"
+				],
+				"security": [],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "CreateUser",
+				"responses": {
+					"201": {
+						"description": "User created successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid input or user already exists"
+					}
+				},
+				"description": "Create a new user",
+				"summary": "Create a new user",
+				"tags": [
+					"Users"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateUserRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/users/{userId}": {
+			"get": {
+				"operationId": "GetUser",
+				"responses": {
+					"200": {
+						"description": "User retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "User not found"
+					}
+				},
+				"description": "Get user by ID",
+				"summary": "Retrieve a specific user",
+				"tags": [
+					"Users"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"description": "The user's identifier",
+						"in": "path",
+						"name": "userId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateUser",
+				"responses": {
+					"200": {
+						"description": "User updated successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid input or email already exists"
+					},
+					"404": {
+						"description": "User not found"
+					}
+				},
+				"description": "Update user by ID",
+				"summary": "Update a specific user",
+				"tags": [
+					"Users"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"description": "The user's identifier",
+						"in": "path",
+						"name": "userId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateUserRequest"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "DeleteUser",
+				"responses": {
+					"204": {
+						"description": "User deleted successfully"
+					},
+					"404": {
+						"description": "User not found"
+					}
+				},
+				"description": "Delete user by ID",
+				"summary": "Delete a specific user",
+				"tags": [
+					"Users"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"description": "The user's identifier",
+						"in": "path",
+						"name": "userId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/system/enums": {
+			"get": {
+				"operationId": "GetEnums",
+				"responses": {
+					"200": {
+						"description": "Enum values retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EnumResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get all system enum values",
+				"summary": "Get all enum values used in the system",
+				"tags": [
+					"System"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/system/config": {
+			"get": {
+				"operationId": "GetSystemConfig",
+				"responses": {
+					"200": {
+						"description": "System configuration retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ConfigResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get system configuration",
+				"summary": "Get complete system configuration including enums and features",
+				"tags": [
+					"System"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/system/vehicle-types": {
+			"get": {
+				"operationId": "GetVehicleTypes",
+				"responses": {
+					"200": {
+						"description": "Vehicle types retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {
+											"items": {
+												"type": "string"
+											},
+											"type": "array"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get vehicle types",
+				"summary": "Get all supported vehicle types",
+				"tags": [
+					"System"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/system/slot-types": {
+			"get": {
+				"operationId": "GetSlotTypes",
+				"responses": {
+					"200": {
+						"description": "Slot types retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {
+											"items": {
+												"type": "string"
+											},
+											"type": "array"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get slot types",
+				"summary": "Get all supported slot types",
+				"tags": [
+					"System"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/system/billing-types": {
+			"get": {
+				"operationId": "GetBillingTypes",
+				"responses": {
+					"200": {
+						"description": "Billing types retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {
+											"items": {
+												"type": "string"
+											},
+											"type": "array"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get billing types",
+				"summary": "Get all supported billing types",
+				"tags": [
+					"System"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/slots": {
+			"get": {
+				"operationId": "GetSlots",
+				"responses": {
+					"200": {
+						"description": "Slots retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SlotResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get all slots",
+				"summary": "Get all parking slots with filters",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"AVAILABLE",
+								"OCCUPIED",
+								"MAINTENANCE"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "type",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"REGULAR",
+								"COMPACT",
+								"EV",
+								"HANDICAP_ACCESSIBLE"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"default": 50,
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "CreateSlot",
+				"responses": {
+					"201": {
+						"description": "Slot created successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SlotResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request or slot number already exists"
+					}
+				},
+				"description": "Create new slot",
+				"summary": "Create a new parking slot",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateSlotRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/slots/availability-map": {
+			"get": {
+				"operationId": "GetAvailabilityMap",
+				"responses": {
+					"200": {
+						"description": "Availability map retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SlotResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get slot availability map",
+				"summary": "Get visual representation of slot availability",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/slots/{slotId}": {
+			"get": {
+				"operationId": "GetSlotById",
+				"responses": {
+					"200": {
+						"description": "Slot retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SlotResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Slot not found"
+					}
+				},
+				"description": "Get slot by ID",
+				"summary": "Get specific slot details",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "slotId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"put": {
+				"operationId": "UpdateSlot",
+				"responses": {
+					"200": {
+						"description": "Slot updated successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SlotResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Slot not found"
+					}
+				},
+				"description": "Update slot",
+				"summary": "Update slot status or type",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "slotId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateSlotRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/slots/auto-assign": {
+			"post": {
+				"operationId": "AutoAssignSlot",
+				"responses": {
+					"200": {
+						"description": "Slot assigned successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AutoAssignResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No available slots for vehicle type"
+					}
+				},
+				"description": "Auto-assign slot",
+				"summary": "Automatically assign best available slot for vehicle type",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/AutoAssignRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/slots/{slotId}/maintenance": {
+			"post": {
+				"operationId": "SetSlotMaintenance",
+				"responses": {
+					"200": {
+						"description": "Slot marked for maintenance",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SlotResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Slot is currently occupied"
+					}
+				},
+				"description": "Set slot to maintenance",
+				"summary": "Mark slot as under maintenance",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "slotId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/slots/{slotId}/release-maintenance": {
+			"post": {
+				"operationId": "ReleaseSlotMaintenance",
+				"responses": {
+					"200": {
+						"description": "Slot released from maintenance",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SlotResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Slot not found"
+					}
+				},
+				"description": "Release slot from maintenance",
+				"summary": "Mark slot as available after maintenance",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "slotId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/slots/bulk": {
+			"post": {
+				"operationId": "BulkCreateSlots",
+				"responses": {
+					"201": {
+						"description": "Slots created successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SlotResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request or duplicate slot numbers"
+					}
+				},
+				"description": "Bulk create slots",
+				"summary": "Create multiple slots at once",
+				"tags": [
+					"Slots"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"items": {
+									"$ref": "#/components/schemas/CreateSlotRequest"
+								},
+								"type": "array"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/sessions/active": {
+			"get": {
+				"operationId": "GetActiveSessions",
+				"responses": {
+					"200": {
+						"description": "Active sessions retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get all active sessions",
+				"summary": "Get all currently active parking sessions",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "vehicleType",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"CAR",
+								"BIKE",
+								"EV",
+								"HANDICAP_ACCESSIBLE"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/api/sessions/{sessionId}": {
+			"get": {
+				"operationId": "GetSessionById",
+				"responses": {
+					"200": {
+						"description": "Session retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Session not found"
+					}
+				},
+				"description": "Get session by ID",
+				"summary": "Get specific session details",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "sessionId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/sessions/vehicle/{numberPlate}": {
+			"get": {
+				"operationId": "GetSessionByVehicle",
+				"responses": {
+					"200": {
+						"description": "Session retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "No active session found for vehicle"
+					}
+				},
+				"description": "Get session by vehicle number plate",
+				"summary": "Get active session for a specific vehicle",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "numberPlate",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/sessions/extend": {
+			"post": {
+				"operationId": "ExtendSession",
+				"responses": {
+					"200": {
+						"description": "Session extended successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Session not found or not active"
+					}
+				},
+				"description": "Extend session billing",
+				"summary": "Extend parking session with additional billing",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ExtendSessionRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/sessions/history": {
+			"get": {
+				"operationId": "GetSessionHistory",
+				"responses": {
+					"200": {
+						"description": "Session history retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get session history",
+				"summary": "Get parking session history with filters",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "startDate",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "endDate",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "vehicleType",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"CAR",
+								"BIKE",
+								"EV",
+								"HANDICAP_ACCESSIBLE"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"ACTIVE",
+								"COMPLETED"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/api/sessions/{sessionId}/cost": {
+			"get": {
+				"operationId": "CalculateSessionCost",
+				"responses": {
+					"200": {
+						"description": "Session cost calculated successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Session not found"
+					}
+				},
+				"description": "Calculate session cost",
+				"summary": "Calculate current cost for an active session",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "sessionId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/sessions/{sessionId}/force-end": {
+			"post": {
+				"operationId": "ForceEndSession",
+				"responses": {
+					"200": {
+						"description": "Session ended successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Session not found or already ended"
+					}
+				},
+				"description": "Force end session",
+				"summary": "Force end a session (admin function)",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "sessionId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/sessions/stats": {
+			"get": {
+				"operationId": "GetSessionStats",
+				"responses": {
+					"200": {
+						"description": "Session statistics retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get session statistics",
+				"summary": "Get statistics about parking sessions",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "period",
+						"required": false,
+						"schema": {
+							"default": "day",
+							"type": "string",
+							"enum": [
+								"day",
+								"week",
+								"month"
+							]
+						}
+					}
+				]
+			}
+		},
+		"/api/sessions/overstay-alerts": {
+			"get": {
+				"operationId": "GetOverstayAlerts",
+				"responses": {
+					"200": {
+						"description": "Overstay alerts retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SessionResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get overstay alerts",
+				"summary": "Get sessions that have exceeded expected duration",
+				"tags": [
+					"Sessions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "thresholdHours",
+						"required": false,
+						"schema": {
+							"default": 24,
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/api/parking/entry": {
+			"post": {
+				"operationId": "RegisterVehicleEntry",
+				"responses": {
+					"200": {
+						"description": "Vehicle entry registered successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/VehicleEntryResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request or no available slots"
+					}
+				},
+				"description": "Register vehicle entry",
+				"summary": "Register a new vehicle entry with auto or manual slot assignment",
+				"tags": [
+					"Parking"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VehicleEntryRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/parking/search/{numberPlate}": {
+			"get": {
+				"operationId": "SearchVehicle",
+				"responses": {
+					"200": {
+						"description": "Vehicle found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SearchVehicleResponse"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Vehicle not found"
+					}
+				},
+				"description": "Search vehicle by number plate",
+				"summary": "Search for a vehicle and get its current status and history",
+				"tags": [
+					"Parking"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "numberPlate",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/parking/quick-search": {
+			"get": {
+				"operationId": "QuickSearch",
+				"responses": {
+					"200": {
+						"description": "Search results",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {
+											"items": {},
+											"type": "array"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Quick search vehicles",
+				"summary": "Quick search vehicles by partial number plate",
+				"tags": [
+					"Parking"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "query",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/parking/exit": {
+			"post": {
+				"operationId": "RegisterVehicleExit",
+				"responses": {
+					"200": {
+						"description": "Vehicle exit registered successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/VehicleExitResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Vehicle not found or not currently parked"
+					}
+				},
+				"description": "Register vehicle exit",
+				"summary": "Register vehicle exit and calculate billing",
+				"tags": [
+					"Parking"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VehicleExitRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/parking/current": {
+			"get": {
+				"operationId": "GetCurrentlyParkedVehicles",
+				"responses": {
+					"200": {
+						"description": "Currently parked vehicles retrieved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"pagination": {},
+										"data": {},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"pagination",
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get currently parked vehicles",
+				"summary": "Get list of all currently parked vehicles",
+				"tags": [
+					"Parking"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "vehicleType",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"CAR",
+								"BIKE",
+								"EV",
+								"HANDICAP_ACCESSIBLE"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/api/parking/history": {
+			"get": {
+				"operationId": "GetParkingHistory",
+				"responses": {
+					"200": {
+						"description": "Parking history retrieved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"pagination": {},
+										"data": {},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"pagination",
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get parking history",
+				"summary": "Get parking history with filters",
+				"tags": [
+					"Parking"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "startDate",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "endDate",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "vehicleType",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"CAR",
+								"BIKE",
+								"EV",
+								"HANDICAP_ACCESSIBLE"
+							]
+						}
+					},
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "limit",
+						"required": false,
+						"schema": {
+							"default": 20,
+							"format": "double",
+							"type": "number"
+						}
+					}
+				]
+			}
+		},
+		"/api/dashboard/stats": {
+			"get": {
+				"operationId": "GetDashboardStats",
+				"responses": {
+					"200": {
+						"description": "Dashboard statistics retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {
+											"$ref": "#/components/schemas/DashboardStats"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get dashboard statistics",
+				"summary": "Get real-time parking statistics",
+				"tags": [
+					"Dashboard"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/dashboard/revenue": {
+			"get": {
+				"operationId": "GetRevenueStats",
+				"responses": {
+					"200": {
+						"description": "Revenue statistics retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {
+											"$ref": "#/components/schemas/RevenueStats"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get revenue statistics",
+				"summary": "Get revenue statistics for different periods",
+				"tags": [
+					"Dashboard"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "startDate",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "endDate",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/dashboard/activity": {
+			"get": {
+				"operationId": "GetActivityStats",
+				"responses": {
+					"200": {
+						"description": "Activity statistics retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {
+											"$ref": "#/components/schemas/ActivityStats"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get activity statistics",
+				"summary": "Get parking activity statistics",
+				"tags": [
+					"Dashboard"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/dashboard/occupancy-trends": {
+			"get": {
+				"operationId": "GetOccupancyTrends",
+				"responses": {
+					"200": {
+						"description": "Occupancy trends retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {
+											"items": {},
+											"type": "array"
+										},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get occupancy trends",
+				"summary": "Get occupancy trends over time",
+				"tags": [
+					"Dashboard"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "period",
+						"required": false,
+						"schema": {
+							"default": "day",
+							"type": "string",
+							"enum": [
+								"day",
+								"week",
+								"month"
+							]
+						}
+					}
+				]
+			}
+		},
+		"/api/dashboard/realtime": {
+			"get": {
+				"operationId": "GetRealtimeUpdates",
+				"responses": {
+					"200": {
+						"description": "Real-time updates retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get real-time updates",
+				"summary": "Get real-time parking updates for live dashboard",
+				"tags": [
+					"Dashboard"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/dashboard/slot-availability": {
+			"get": {
+				"operationId": "GetSlotAvailability",
+				"responses": {
+					"200": {
+						"description": "Slot availability retrieved successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"data": {},
+										"success": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"data",
+										"success"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "Get slot availability summary",
+				"summary": "Get detailed slot availability by type and location",
+				"tags": [
+					"Dashboard"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "slotType",
+						"required": false,
+						"schema": {
+							"type": "string",
+							"enum": [
+								"REGULAR",
+								"COMPACT",
+								"EV",
+								"HANDICAP_ACCESSIBLE"
+							]
+						}
+					}
+				]
+			}
+		},
+		"/api/auth/send-register-otp": {
+			"post": {
+				"operationId": "SendRegisterOTP",
+				"responses": {
+					"200": {
+						"description": "OTP sent successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SendOTPResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request or user already exists"
+					}
+				},
+				"description": "Send OTP for user registration",
+				"summary": "Send OTP to email for registration",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SendOTPRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/verify-register-otp": {
+			"post": {
+				"operationId": "VerifyRegisterOTP",
+				"responses": {
+					"200": {
+						"description": "Registration successful",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/VerifyOTPResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid OTP or registration failed"
+					}
+				},
+				"description": "Verify OTP and create user account",
+				"summary": "Verify registration OTP and create account",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VerifyOTPRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/send-login-otp": {
+			"post": {
+				"operationId": "SendLoginOTP",
+				"responses": {
+					"200": {
+						"description": "OTP sent successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SendOTPResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request or user not found"
+					}
+				},
+				"description": "Send OTP for user login",
+				"summary": "Send OTP to email for login",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SendOTPRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/verify-login-otp": {
+			"post": {
+				"operationId": "VerifyLoginOTP",
+				"responses": {
+					"200": {
+						"description": "Login successful",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/VerifyOTPResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid OTP or login failed"
+					}
+				},
+				"description": "Verify OTP and login user",
+				"summary": "Verify login OTP and authenticate user",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VerifyOTPRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/me": {
+			"get": {
+				"operationId": "GetCurrentUser",
+				"responses": {
+					"200": {
+						"description": "User information retrieved",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuthResponse"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized"
+					}
+				},
+				"description": "Get current authenticated user",
+				"summary": "Get current user information",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/api/auth/logout": {
+			"post": {
+				"operationId": "Logout",
+				"responses": {
+					"200": {
+						"description": "Logged out successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuthResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "Logout user",
+				"summary": "Logout current user",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": []
+			}
+		}
+	},
+	"info": {
+		"title": "ParkFlow API",
+		"version": "1.0.0",
+		"description": "API for the ParkFlow application",
+		"contact": {
+			"name": "API Support",
+			"email": "support@ParkFlow.com"
+		}
+	},
+	"servers": [
+		{
+			"url": "/",
+			"description": "Default API server"
+		}
+	]
+}

@@ -1,0 +1,107 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: ParkFlow_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ParkFlow_db
+    ports:
+      - "5430:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ParkFlow_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ParkFlow_redis
+    restart: unless-stopped
+    ports:
+      - "6370:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ParkFlow_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ParkFlow_backend
+    restart: unless-stopped
+    ports:
+      - "8008:8008"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - ./backend/scripts:/app/scripts
+      - ./backend/build:/app/build
+      - ./backend/package.json:/app/package.json
+      - ./backend/tsconfig.json:/app/tsconfig.json
+      - ./backend/tsconfig.build.json:/app/tsconfig.build.json
+      - ./backend/tsoa.json:/app/tsoa.json
+    environment:
+      DATABASE_URL: "postgresql://postgres:password@postgres:5432/ParkFlow_db?schema=public"
+      REDIS_URL: "redis://redis:6379"
+      PORT: 8008
+      NODE_ENV: development
+      API_BASE_PATH: ""
+      ENABLE_DOCS: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ParkFlow_network
+    command: sh -c "npm install && npx prisma migrate deploy && npx prisma generate && npm run dev"
+
+  # Prisma Studio
+  prisma-studio:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ParkFlow_prisma_studio
+    restart: unless-stopped
+    ports:
+      - "5554:5555"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - ./backend/package.json:/app/package.json
+      - ./backend/tsconfig.json:/app/tsconfig.json
+    environment:
+      DATABASE_URL: "postgresql://postgres:password@postgres:5432/ParkFlow_db?schema=public"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - ParkFlow_network
+    command: sh -c "npm install && npx prisma generate && npx prisma studio --port 5555 --hostname 0.0.0.0"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  ParkFlow_network:
+    driver: bridge

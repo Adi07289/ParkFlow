@@ -1,0 +1,7 @@
+public enum AlertType {
+    OVERSTAY,
+    UNAUTHORIZED_AREA,
+    RAPID_ENTRY,
+    REPEATED_OFFENDER,
+    MANUAL
+}
