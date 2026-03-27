@@ -6,7 +6,7 @@ This document explains how to run Prisma Studio with the ParkFlow backend in var
 
 Prisma Studio is automatically configured to run with Docker Compose.
 
-### Starting with Docker Compose
+###Starting with Docker Compose
 
 ```bash
 # Start all services including Prisma Studio
