@@ -8,13 +8,21 @@ import { UserController } from './../controllers/UserController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SystemController } from './../controllers/SystemController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { SwapController } from './../controllers/SwapController';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { SubscriptionController } from './../controllers/SubscriptionController';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SlotController } from './../controllers/SlotController';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { SignageController } from './../controllers/SignageController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { SessionController } from './../controllers/SessionController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ParkingController } from './../controllers/ParkingController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { NotificationController } from './../controllers/NotificationController';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { EVChargingController } from './../controllers/EVChargingController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { DashboardController } from './../controllers/DashboardController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -23,6 +31,8 @@ import { BillingController } from './../controllers/BillingController';
 import { AuthController } from './../controllers/AuthController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { AnalyticsController } from './../controllers/AnalyticsController';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { AlertController } from './../controllers/AlertController';
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
 
 
@@ -80,6 +90,70 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SwapResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string"},
+            "data": {"dataType":"any"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ListSwapRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "userId": {"dataType":"string","required":true},
+            "sessionId": {"dataType":"string","required":true},
+            "listingPrice": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ClaimSwapRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "userId": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SubscriptionResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string"},
+            "data": {"dataType":"any"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateSubscriptionRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "userId": {"dataType":"string","required":true},
+            "tier": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["BASIC"]},{"dataType":"enum","enums":["PREMIUM"]},{"dataType":"enum","enums":["ENTERPRISE"]}],"required":true},
+            "durationMonths": {"dataType":"double"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AddPointsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "amountSpent": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RedeemPointsRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "points": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "SlotResponse": {
         "dataType": "refObject",
         "properties": {
@@ -122,6 +196,16 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "vehicleType": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["CAR"]},{"dataType":"enum","enums":["BIKE"]},{"dataType":"enum","enums":["EV"]},{"dataType":"enum","enums":["HANDICAP_ACCESSIBLE"]}],"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SignageResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string"},
+            "data": {"dataType":"any"},
         },
         "additionalProperties": false,
     },
@@ -217,6 +301,24 @@ const models: TsoaRoute.Models = {
             "success": {"dataType":"boolean","required":true},
             "message": {"dataType":"string"},
             "data": {"dataType":"any"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "EVResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string"},
+            "data": {"dataType":"any"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "JoinQueueRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "vehicleId": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -357,6 +459,35 @@ const models: TsoaRoute.Models = {
             "success": {"dataType":"boolean","required":true},
             "message": {"dataType":"string"},
             "data": {"dataType":"any"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AlertResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "success": {"dataType":"boolean","required":true},
+            "message": {"dataType":"string"},
+            "data": {"dataType":"any"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ResolveAlertRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "resolvedBy": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateManualAlertRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "sessionId": {"dataType":"string"},
+            "vehicleId": {"dataType":"string"},
+            "severity": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["LOW"]},{"dataType":"enum","enums":["MEDIUM"]},{"dataType":"enum","enums":["HIGH"]},{"dataType":"enum","enums":["CRITICAL"]}],"required":true},
+            "message": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -662,6 +793,338 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getBillingTypes',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSwapController_listForSwap: Record<string, TsoaRoute.ParameterSchema> = {
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"ListSwapRequest"},
+        };
+        app.post('/api/swaps',
+            ...(fetchMiddlewares<RequestHandler>(SwapController)),
+            ...(fetchMiddlewares<RequestHandler>(SwapController.prototype.listForSwap)),
+
+            async function SwapController_listForSwap(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSwapController_listForSwap, request, response });
+
+                const controller = new SwapController();
+
+              await templateService.apiHandler({
+                methodName: 'listForSwap',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSwapController_getAvailableSwaps: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/swaps',
+            ...(fetchMiddlewares<RequestHandler>(SwapController)),
+            ...(fetchMiddlewares<RequestHandler>(SwapController.prototype.getAvailableSwaps)),
+
+            async function SwapController_getAvailableSwaps(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSwapController_getAvailableSwaps, request, response });
+
+                const controller = new SwapController();
+
+              await templateService.apiHandler({
+                methodName: 'getAvailableSwaps',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSwapController_claimSwap: Record<string, TsoaRoute.ParameterSchema> = {
+                swapId: {"in":"path","name":"swapId","required":true,"dataType":"string"},
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"ClaimSwapRequest"},
+        };
+        app.post('/api/swaps/:swapId/claim',
+            ...(fetchMiddlewares<RequestHandler>(SwapController)),
+            ...(fetchMiddlewares<RequestHandler>(SwapController.prototype.claimSwap)),
+
+            async function SwapController_claimSwap(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSwapController_claimSwap, request, response });
+
+                const controller = new SwapController();
+
+              await templateService.apiHandler({
+                methodName: 'claimSwap',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSwapController_cancelListing: Record<string, TsoaRoute.ParameterSchema> = {
+                swapId: {"in":"path","name":"swapId","required":true,"dataType":"string"},
+                userId: {"in":"query","name":"userId","required":true,"dataType":"string"},
+        };
+        app.delete('/api/swaps/:swapId',
+            ...(fetchMiddlewares<RequestHandler>(SwapController)),
+            ...(fetchMiddlewares<RequestHandler>(SwapController.prototype.cancelListing)),
+
+            async function SwapController_cancelListing(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSwapController_cancelListing, request, response });
+
+                const controller = new SwapController();
+
+              await templateService.apiHandler({
+                methodName: 'cancelListing',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSwapController_getUserHistory: Record<string, TsoaRoute.ParameterSchema> = {
+                userId: {"in":"path","name":"userId","required":true,"dataType":"string"},
+        };
+        app.get('/api/swaps/history/:userId',
+            ...(fetchMiddlewares<RequestHandler>(SwapController)),
+            ...(fetchMiddlewares<RequestHandler>(SwapController.prototype.getUserHistory)),
+
+            async function SwapController_getUserHistory(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSwapController_getUserHistory, request, response });
+
+                const controller = new SwapController();
+
+              await templateService.apiHandler({
+                methodName: 'getUserHistory',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSubscriptionController_createSubscription: Record<string, TsoaRoute.ParameterSchema> = {
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"CreateSubscriptionRequest"},
+        };
+        app.post('/api/subscriptions',
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController)),
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController.prototype.createSubscription)),
+
+            async function SubscriptionController_createSubscription(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSubscriptionController_createSubscription, request, response });
+
+                const controller = new SubscriptionController();
+
+              await templateService.apiHandler({
+                methodName: 'createSubscription',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSubscriptionController_getSubscription: Record<string, TsoaRoute.ParameterSchema> = {
+                userId: {"in":"path","name":"userId","required":true,"dataType":"string"},
+        };
+        app.get('/api/subscriptions/:userId',
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController)),
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController.prototype.getSubscription)),
+
+            async function SubscriptionController_getSubscription(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSubscriptionController_getSubscription, request, response });
+
+                const controller = new SubscriptionController();
+
+              await templateService.apiHandler({
+                methodName: 'getSubscription',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSubscriptionController_addPoints: Record<string, TsoaRoute.ParameterSchema> = {
+                userId: {"in":"path","name":"userId","required":true,"dataType":"string"},
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"AddPointsRequest"},
+        };
+        app.post('/api/subscriptions/:userId/points/add',
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController)),
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController.prototype.addPoints)),
+
+            async function SubscriptionController_addPoints(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSubscriptionController_addPoints, request, response });
+
+                const controller = new SubscriptionController();
+
+              await templateService.apiHandler({
+                methodName: 'addPoints',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSubscriptionController_redeemPoints: Record<string, TsoaRoute.ParameterSchema> = {
+                userId: {"in":"path","name":"userId","required":true,"dataType":"string"},
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"RedeemPointsRequest"},
+        };
+        app.post('/api/subscriptions/:userId/points/redeem',
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController)),
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController.prototype.redeemPoints)),
+
+            async function SubscriptionController_redeemPoints(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSubscriptionController_redeemPoints, request, response });
+
+                const controller = new SubscriptionController();
+
+              await templateService.apiHandler({
+                methodName: 'redeemPoints',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSubscriptionController_getTiers: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/subscriptions/tiers/all',
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController)),
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController.prototype.getTiers)),
+
+            async function SubscriptionController_getTiers(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSubscriptionController_getTiers, request, response });
+
+                const controller = new SubscriptionController();
+
+              await templateService.apiHandler({
+                methodName: 'getTiers',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSubscriptionController_cancelSubscription: Record<string, TsoaRoute.ParameterSchema> = {
+                userId: {"in":"path","name":"userId","required":true,"dataType":"string"},
+        };
+        app.delete('/api/subscriptions/:userId',
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController)),
+            ...(fetchMiddlewares<RequestHandler>(SubscriptionController.prototype.cancelSubscription)),
+
+            async function SubscriptionController_cancelSubscription(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSubscriptionController_cancelSubscription, request, response });
+
+                const controller = new SubscriptionController();
+
+              await templateService.apiHandler({
+                methodName: 'cancelSubscription',
                 controller,
                 response,
                 next,
@@ -1000,6 +1463,124 @@ export function RegisterRoutes(app: Router) {
                 next,
                 validatedArgs,
                 successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSlotController_deleteSlot: Record<string, TsoaRoute.ParameterSchema> = {
+                slotId: {"in":"path","name":"slotId","required":true,"dataType":"string"},
+        };
+        app.delete('/api/slots/:slotId',
+            ...(fetchMiddlewares<RequestHandler>(SlotController)),
+            ...(fetchMiddlewares<RequestHandler>(SlotController.prototype.deleteSlot)),
+
+            async function SlotController_deleteSlot(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSlotController_deleteSlot, request, response });
+
+                const controller = new SlotController();
+
+              await templateService.apiHandler({
+                methodName: 'deleteSlot',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSignageController_getAvailabilityFeed: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/signage/availability',
+            ...(fetchMiddlewares<RequestHandler>(SignageController)),
+            ...(fetchMiddlewares<RequestHandler>(SignageController.prototype.getAvailabilityFeed)),
+
+            async function SignageController_getAvailabilityFeed(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSignageController_getAvailabilityFeed, request, response });
+
+                const controller = new SignageController();
+
+              await templateService.apiHandler({
+                methodName: 'getAvailabilityFeed',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSignageController_getAreaAvailability: Record<string, TsoaRoute.ParameterSchema> = {
+                areaId: {"in":"path","name":"areaId","required":true,"dataType":"string"},
+        };
+        app.get('/api/signage/availability/:areaId',
+            ...(fetchMiddlewares<RequestHandler>(SignageController)),
+            ...(fetchMiddlewares<RequestHandler>(SignageController.prototype.getAreaAvailability)),
+
+            async function SignageController_getAreaAvailability(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSignageController_getAreaAvailability, request, response });
+
+                const controller = new SignageController();
+
+              await templateService.apiHandler({
+                methodName: 'getAreaAvailability',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsSignageController_getDirectionalMessage: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/signage/message',
+            ...(fetchMiddlewares<RequestHandler>(SignageController)),
+            ...(fetchMiddlewares<RequestHandler>(SignageController.prototype.getDirectionalMessage)),
+
+            async function SignageController_getDirectionalMessage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsSignageController_getDirectionalMessage, request, response });
+
+                const controller = new SignageController();
+
+              await templateService.apiHandler({
+                methodName: 'getDirectionalMessage',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);
@@ -1638,6 +2219,243 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'runOverstayDetection',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEVChargingController_joinQueue: Record<string, TsoaRoute.ParameterSchema> = {
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"JoinQueueRequest"},
+        };
+        app.post('/api/ev/queue/join',
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController)),
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController.prototype.joinQueue)),
+
+            async function EVChargingController_joinQueue(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEVChargingController_joinQueue, request, response });
+
+                const controller = new EVChargingController();
+
+              await templateService.apiHandler({
+                methodName: 'joinQueue',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEVChargingController_getQueue: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/ev/queue',
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController)),
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController.prototype.getQueue)),
+
+            async function EVChargingController_getQueue(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEVChargingController_getQueue, request, response });
+
+                const controller = new EVChargingController();
+
+              await templateService.apiHandler({
+                methodName: 'getQueue',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEVChargingController_getQueuePosition: Record<string, TsoaRoute.ParameterSchema> = {
+                vehicleId: {"in":"path","name":"vehicleId","required":true,"dataType":"string"},
+        };
+        app.get('/api/ev/queue/:vehicleId/position',
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController)),
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController.prototype.getQueuePosition)),
+
+            async function EVChargingController_getQueuePosition(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEVChargingController_getQueuePosition, request, response });
+
+                const controller = new EVChargingController();
+
+              await templateService.apiHandler({
+                methodName: 'getQueuePosition',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEVChargingController_leaveQueue: Record<string, TsoaRoute.ParameterSchema> = {
+                vehicleId: {"in":"path","name":"vehicleId","required":true,"dataType":"string"},
+        };
+        app.delete('/api/ev/queue/:vehicleId',
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController)),
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController.prototype.leaveQueue)),
+
+            async function EVChargingController_leaveQueue(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEVChargingController_leaveQueue, request, response });
+
+                const controller = new EVChargingController();
+
+              await templateService.apiHandler({
+                methodName: 'leaveQueue',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEVChargingController_notifyNext: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.post('/api/ev/queue/notify-next',
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController)),
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController.prototype.notifyNext)),
+
+            async function EVChargingController_notifyNext(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEVChargingController_notifyNext, request, response });
+
+                const controller = new EVChargingController();
+
+              await templateService.apiHandler({
+                methodName: 'notifyNext',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEVChargingController_markChargingComplete: Record<string, TsoaRoute.ParameterSchema> = {
+                sessionId: {"in":"path","name":"sessionId","required":true,"dataType":"string"},
+        };
+        app.post('/api/ev/charging/:sessionId/complete',
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController)),
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController.prototype.markChargingComplete)),
+
+            async function EVChargingController_markChargingComplete(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEVChargingController_markChargingComplete, request, response });
+
+                const controller = new EVChargingController();
+
+              await templateService.apiHandler({
+                methodName: 'markChargingComplete',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEVChargingController_getIdleFee: Record<string, TsoaRoute.ParameterSchema> = {
+                sessionId: {"in":"path","name":"sessionId","required":true,"dataType":"string"},
+        };
+        app.get('/api/ev/idle-fees/:sessionId',
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController)),
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController.prototype.getIdleFee)),
+
+            async function EVChargingController_getIdleFee(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEVChargingController_getIdleFee, request, response });
+
+                const controller = new EVChargingController();
+
+              await templateService.apiHandler({
+                methodName: 'getIdleFee',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsEVChargingController_getIdleSessions: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/ev/idle-sessions',
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController)),
+            ...(fetchMiddlewares<RequestHandler>(EVChargingController.prototype.getIdleSessions)),
+
+            async function EVChargingController_getIdleSessions(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsEVChargingController_getIdleSessions, request, response });
+
+                const controller = new EVChargingController();
+
+              await templateService.apiHandler({
+                methodName: 'getIdleSessions',
                 controller,
                 response,
                 next,
@@ -2359,6 +3177,190 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getDashboardAnalytics',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAlertController_getAlerts: Record<string, TsoaRoute.ParameterSchema> = {
+                alertType: {"in":"query","name":"alertType","dataType":"union","subSchemas":[{"dataType":"enum","enums":["OVERSTAY"]},{"dataType":"enum","enums":["UNAUTHORIZED_AREA"]},{"dataType":"enum","enums":["RAPID_ENTRY"]},{"dataType":"enum","enums":["REPEATED_OFFENDER"]},{"dataType":"enum","enums":["MANUAL"]}]},
+                severity: {"in":"query","name":"severity","dataType":"union","subSchemas":[{"dataType":"enum","enums":["LOW"]},{"dataType":"enum","enums":["MEDIUM"]},{"dataType":"enum","enums":["HIGH"]},{"dataType":"enum","enums":["CRITICAL"]}]},
+                isResolved: {"in":"query","name":"isResolved","dataType":"boolean"},
+                page: {"default":1,"in":"query","name":"page","dataType":"double"},
+                limit: {"default":20,"in":"query","name":"limit","dataType":"double"},
+        };
+        app.get('/api/alerts',
+            ...(fetchMiddlewares<RequestHandler>(AlertController)),
+            ...(fetchMiddlewares<RequestHandler>(AlertController.prototype.getAlerts)),
+
+            async function AlertController_getAlerts(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAlertController_getAlerts, request, response });
+
+                const controller = new AlertController();
+
+              await templateService.apiHandler({
+                methodName: 'getAlerts',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAlertController_getAlertStats: Record<string, TsoaRoute.ParameterSchema> = {
+                periodDays: {"default":7,"in":"query","name":"periodDays","dataType":"double"},
+        };
+        app.get('/api/alerts/stats',
+            ...(fetchMiddlewares<RequestHandler>(AlertController)),
+            ...(fetchMiddlewares<RequestHandler>(AlertController.prototype.getAlertStats)),
+
+            async function AlertController_getAlertStats(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAlertController_getAlertStats, request, response });
+
+                const controller = new AlertController();
+
+              await templateService.apiHandler({
+                methodName: 'getAlertStats',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAlertController_triggerScan: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.post('/api/alerts/scan',
+            ...(fetchMiddlewares<RequestHandler>(AlertController)),
+            ...(fetchMiddlewares<RequestHandler>(AlertController.prototype.triggerScan)),
+
+            async function AlertController_triggerScan(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAlertController_triggerScan, request, response });
+
+                const controller = new AlertController();
+
+              await templateService.apiHandler({
+                methodName: 'triggerScan',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAlertController_resolveAlert: Record<string, TsoaRoute.ParameterSchema> = {
+                alertId: {"in":"path","name":"alertId","required":true,"dataType":"string"},
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"ResolveAlertRequest"},
+        };
+        app.post('/api/alerts/:alertId/resolve',
+            ...(fetchMiddlewares<RequestHandler>(AlertController)),
+            ...(fetchMiddlewares<RequestHandler>(AlertController.prototype.resolveAlert)),
+
+            async function AlertController_resolveAlert(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAlertController_resolveAlert, request, response });
+
+                const controller = new AlertController();
+
+              await templateService.apiHandler({
+                methodName: 'resolveAlert',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAlertController_createManualAlert: Record<string, TsoaRoute.ParameterSchema> = {
+                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"CreateManualAlertRequest"},
+        };
+        app.post('/api/alerts/manual',
+            ...(fetchMiddlewares<RequestHandler>(AlertController)),
+            ...(fetchMiddlewares<RequestHandler>(AlertController.prototype.createManualAlert)),
+
+            async function AlertController_createManualAlert(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAlertController_createManualAlert, request, response });
+
+                const controller = new AlertController();
+
+              await templateService.apiHandler({
+                methodName: 'createManualAlert',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 201,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAlertController_getRepeatOffenders: Record<string, TsoaRoute.ParameterSchema> = {
+                threshold: {"default":3,"in":"query","name":"threshold","dataType":"double"},
+        };
+        app.get('/api/alerts/offenders',
+            ...(fetchMiddlewares<RequestHandler>(AlertController)),
+            ...(fetchMiddlewares<RequestHandler>(AlertController.prototype.getRepeatOffenders)),
+
+            async function AlertController_getRepeatOffenders(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAlertController_getRepeatOffenders, request, response });
+
+                const controller = new AlertController();
+
+              await templateService.apiHandler({
+                methodName: 'getRepeatOffenders',
                 controller,
                 response,
                 next,

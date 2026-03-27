@@ -615,6 +615,61 @@ class SlotService {
     }
   }
 
+  async deleteSlot(slotId: string) {
+    try {
+      const slot = await prisma.parkingSlot.findUnique({
+        where: { id: slotId },
+        include: {
+          sessions: {
+            where: { status: SessionStatus.ACTIVE }
+          }
+        }
+      });
+
+      if (!slot) {
+        return {
+          success: false,
+          message: 'Slot not found'
+        };
+      }
+
+      // Check if slot is currently occupied
+      if (slot.sessions.length > 0) {
+        return {
+          success: false,
+          message: 'Cannot delete slot while it is occupied'
+        };
+      }
+
+      // Check if slot has any session history
+      const sessionCount = await prisma.parkingSession.count({
+        where: { slotId }
+      });
+
+      if (sessionCount > 0) {
+        return {
+          success: false,
+          message: 'Cannot delete slot with parking history. Consider marking it for maintenance instead.'
+        };
+      }
+
+      await prisma.parkingSlot.delete({
+        where: { id: slotId }
+      });
+
+      return {
+        success: true,
+        message: `Slot ${slot.slotNumber} deleted successfully`
+      };
+    } catch (error) {
+      console.error('Error deleting slot:', error);
+      return {
+        success: false,
+        message: 'Failed to delete slot'
+      };
+    }
+  }
+
   private formatDuration(milliseconds: number): string {
     const hours = Math.floor(milliseconds / (1000 * 60 * 60));
     const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));

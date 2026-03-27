@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8008/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 // Slot API interfaces
 export interface Slot {
@@ -106,6 +115,14 @@ export const slotsApi = {
     };
   }> {
     const response = await axios.post(`${API_BASE_URL}/slots/${slotId}/reserve`);
+    return response.data;
+  },
+
+  async deleteSlot(slotId: string): Promise<{
+    success: boolean;
+    message?: string;
+  }> {
+    const response = await api.delete(`/slots/${slotId}`);
     return response.data;
   },
 };

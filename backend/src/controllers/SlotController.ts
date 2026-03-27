@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Body,
   Route,
   Tags,
@@ -320,6 +321,30 @@ export class SlotController extends Controller {
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Failed to create slots'
+      };
+    }
+  }
+
+  /**
+   * Delete slot
+   * @summary Delete a parking slot (only if no parking history exists)
+   */
+  @Delete('/{slotId}')
+  @SuccessResponse(200, 'Slot deleted successfully')
+  @Response(400, 'Cannot delete slot - slot is occupied or has parking history')
+  @Response(404, 'Slot not found')
+  public async deleteSlot(@Path() slotId: string): Promise<SlotResponse> {
+    try {
+      const result = await slotService.deleteSlot(slotId);
+      if (!result.success) {
+        this.setStatus(result.message === 'Slot not found' ? 404 : 400);
+      }
+      return result;
+    } catch (error) {
+      this.setStatus(500);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to delete slot'
       };
     }
   }

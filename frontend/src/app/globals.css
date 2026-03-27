@@ -120,3 +120,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide scrollbar for horizontally scrollable nav */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

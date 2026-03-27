@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8008/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -98,6 +98,12 @@ api.interceptors.response.use(
         document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       }
     }
+    
+    // Add better error messages for network issues
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      error.message = 'Cannot connect to server. Please check if the backend is running.';
+    }
+    
     return Promise.reject(error);
   }
 );

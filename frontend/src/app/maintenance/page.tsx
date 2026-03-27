@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Table, 
   TableBody, 
@@ -22,9 +21,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
-import { useAuth } from '@/contexts/auth-context';
 import { Navigation } from '@/components/navigation';
 import { slotsApi, Slot, CreateSlotRequest } from '@/lib/slots-api';
 import { 
@@ -34,39 +31,35 @@ import {
   CheckCircle, 
   XCircle, 
   Search,
-  MoreHorizontal,
   RefreshCw,
   Car,
-  MapPin
+  MapPin,
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function MaintenancePage() {
-  const { loading, isAuthenticated } = useAuth();
-  const router = useRouter();
   const [slots, setSlots] = useState<Slot[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isBulkCreateDialogOpen, setIsBulkCreateDialogOpen] = useState(false);
   const [newSlot, setNewSlot] = useState<CreateSlotRequest>({ 
     slotNumber: '', 
     slotType: 'REGULAR' 
   });
   const [isCreating, setIsCreating] = useState(false);
+  const [isBulkCreating, setIsBulkCreating] = useState(false);
+  const [bulkSlots, setBulkSlots] = useState('');
+  const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.replace('/auth/login');
-    }
-  }, [loading, isAuthenticated, router]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchSlots();
-    }
-  }, [isAuthenticated]);
+    fetchSlots();
+  }, []);
 
   const fetchSlots = async () => {
     try {
@@ -75,7 +68,7 @@ export default function MaintenancePage() {
       setSlots(response.slots);
     } catch (error) {
       console.error('Failed to fetch slots:', error);
-      toast.error('Failed to fetch slots');
+      setSlots([]);
     } finally {
       setIsLoading(false);
     }
@@ -102,25 +95,86 @@ export default function MaintenancePage() {
     }
   };
 
-  const handleSetMaintenance = async (slotId: string) => {
+  const handleBulkCreateSlots = async () => {
+    if (!bulkSlots.trim()) {
+      toast.error('Please enter slot data');
+      return;
+    }
+
     try {
-      await slotsApi.setMaintenance(slotId);
-      toast.success('Slot marked for maintenance');
+      setIsBulkCreating(true);
+      
+      const lines = bulkSlots.trim().split('\n');
+      const slotsToCreate: CreateSlotRequest[] = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const [slotNumber, slotType] = line.split(',').map(item => item.trim());
+        
+        if (!slotNumber) {
+          toast.error(`Line ${i + 1}: Slot number is required`);
+          return;
+        }
+        
+        const validSlotType = slotType?.toUpperCase() as 'REGULAR' | 'COMPACT' | 'EV' | 'HANDICAP_ACCESSIBLE';
+        if (!['REGULAR', 'COMPACT', 'EV', 'HANDICAP_ACCESSIBLE'].includes(validSlotType)) {
+          toast.error(`Line ${i + 1}: Invalid slot type. Use REGULAR, COMPACT, EV, or HANDICAP_ACCESSIBLE`);
+          return;
+        }
+        
+        slotsToCreate.push({
+          slotNumber,
+          slotType: validSlotType
+        });
+      }
+      
+      if (slotsToCreate.length === 0) {
+        toast.error('No valid slots to create');
+        return;
+      }
+      
+      await slotsApi.bulkCreateSlots(slotsToCreate);
+      toast.success(`Successfully created ${slotsToCreate.length} slots`);
+      setIsBulkCreateDialogOpen(false);
+      setBulkSlots('');
       fetchSlots();
     } catch (error) {
-      console.error('Failed to set maintenance:', error);
-      toast.error('Failed to set maintenance');
+      console.error('Failed to bulk create slots:', error);
+      toast.error('Failed to create slots');
+    } finally {
+      setIsBulkCreating(false);
     }
   };
 
-  const handleReleaseMaintenance = async (slotId: string) => {
+  const handleDeleteSlot = async (slotId: string) => {
     try {
-      await slotsApi.releaseMaintenance(slotId);
-      toast.success('Slot released from maintenance');
-      fetchSlots();
-    } catch (error) {
-      console.error('Failed to release maintenance:', error);
-      toast.error('Failed to release maintenance');
+      setIsDeleting(true);
+      const result = await slotsApi.deleteSlot(slotId);
+      
+      if (result.success) {
+        toast.success(result.message || 'Slot deleted successfully');
+        fetchSlots();
+      } else {
+        toast.error(result.message || 'Failed to delete slot');
+      }
+      setDeleteSlotId(null);
+    } catch (error: any) {
+      console.error('Failed to delete slot:', error);
+      
+      if (error.response?.status === 404) {
+        toast.error('Slot not found or has already been deleted');
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.message || 'Cannot delete slot - it may be occupied or have parking history');
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('Failed to delete slot. Please try again.');
+      }
+      setDeleteSlotId(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -165,18 +219,6 @@ export default function MaintenancePage() {
     maintenance: slots.filter(s => s.status === 'MAINTENANCE').length,
   };
 
-  if (loading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -194,59 +236,19 @@ export default function MaintenancePage() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Slot
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Create New Slot</DialogTitle>
-                    <DialogDescription>
-                      Add a new parking slot to the system.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Slot Number
-                      </label>
-                      <Input
-                        placeholder="e.g., B1-12"
-                        value={newSlot.slotNumber}
-                        onChange={(e) => setNewSlot(prev => ({ ...prev, slotNumber: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Slot Type
-                      </label>
-                      <Select
-                        value={newSlot.slotType}
-                        onChange={(e) => setNewSlot(prev => ({ 
-                          ...prev, 
-                          slotType: e.target.value as any 
-                        }))}
-                      >
-                        <option value="REGULAR">Regular</option>
-                        <option value="COMPACT">Compact</option>
-                        <option value="EV">EV Charging</option>
-                        <option value="HANDICAP_ACCESSIBLE">Handicap Accessible</option>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreateSlot} disabled={isCreating}>
-                      {isCreating ? 'Creating...' : 'Create Slot'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                variant="outline"
+                onClick={() => setIsBulkCreateDialogOpen(true)}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Bulk Add
+              </Button>
+              <Button 
+                onClick={() => setIsCreateDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Slot
+              </Button>
             </div>
           </div>
 
@@ -290,62 +292,7 @@ export default function MaintenancePage() {
             </Card>
           </div>
 
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Filters</CardTitle>
-              <CardDescription>Search and filter parking slots</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-4">
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Search Slots
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Search by slot number..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Status
-                  </label>
-                  <Select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                  >
-                    <option value="all">All Status</option>
-                    <option value="AVAILABLE">Available</option>
-                    <option value="OCCUPIED">Occupied</option>
-                    <option value="MAINTENANCE">Maintenance</option>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Type
-                  </label>
-                  <Select
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                  >
-                    <option value="all">All Types</option>
-                    <option value="REGULAR">Regular</option>
-                    <option value="COMPACT">Compact</option>
-                    <option value="EV">EV Charging</option>
-                    <option value="HANDICAP_ACCESSIBLE">Handicap Accessible</option>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Slots Table */}
+          {/* Simple Slots Table */}
           <Card>
             <CardHeader>
               <CardTitle>Slots ({filteredSlots.length})</CardTitle>
@@ -360,7 +307,6 @@ export default function MaintenancePage() {
                     <TableHead>Slot Number</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Last Updated</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -371,32 +317,15 @@ export default function MaintenancePage() {
                       <TableCell>{getTypeBadge(slot.slotType)}</TableCell>
                       <TableCell>{getStatusBadge(slot.status)}</TableCell>
                       <TableCell>
-                        {new Date(slot.updatedAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
                         <div className="flex space-x-2">
-                          {slot.status === 'MAINTENANCE' ? (
+                          {slot.status === 'AVAILABLE' && (
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => handleReleaseMaintenance(slot.id)}
+                              variant="destructive"
+                              onClick={() => setDeleteSlotId(slot.id)}
                             >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Release
-                            </Button>
-                          ) : slot.status === 'AVAILABLE' ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSetMaintenance(slot.id)}
-                            >
-                              <Wrench className="h-4 w-4 mr-1" />
-                              Maintain
-                            </Button>
-                          ) : (
-                            <Button size="sm" variant="outline" disabled>
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Occupied
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
                             </Button>
                           )}
                         </div>
@@ -405,11 +334,9 @@ export default function MaintenancePage() {
                   ))}
                   {filteredSlots.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
+                      <TableCell colSpan={4} className="text-center py-8">
                         <div className="text-gray-500">
-                          {searchTerm || selectedStatus !== 'all' || selectedType !== 'all' 
-                            ? 'No slots found matching your filters' 
-                            : 'No slots available. Create your first slot to get started.'}
+                          No slots available. Create your first slot to get started.
                         </div>
                       </TableCell>
                     </TableRow>
@@ -420,6 +347,129 @@ export default function MaintenancePage() {
           </Card>
         </div>
       </main>
+
+      {/* Bulk Create Dialog */}
+      <Dialog open={isBulkCreateDialogOpen} onOpenChange={setIsBulkCreateDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Bulk Create Slots</DialogTitle>
+            <DialogDescription>
+              Add multiple slots at once. Enter one slot per line in CSV format: slotNumber,slotType
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Slot Data (CSV Format)
+              </label>
+              <div className="text-xs text-gray-500 mb-2">
+                Example: B1-01,REGULAR or A2-05,EV
+              </div>
+              <textarea
+                className="w-full h-40 p-3 border border-gray-300 rounded-md resize-none font-mono text-sm"
+                placeholder={`B1-01,REGULAR
+B1-02,REGULAR  
+B1-03,COMPACT
+B1-04,EV
+B1-05,HANDICAP_ACCESSIBLE`}
+                value={bulkSlots}
+                onChange={(e) => setBulkSlots(e.target.value)}
+              />
+            </div>
+            <div className="text-xs text-gray-500">
+              Supported slot types: REGULAR, COMPACT, EV, HANDICAP_ACCESSIBLE
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBulkCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkCreateSlots} disabled={isBulkCreating}>
+              {isBulkCreating ? 'Creating...' : 'Create Slots'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Slot Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Slot</DialogTitle>
+            <DialogDescription>
+              Add a new parking slot to the system.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Slot Number
+              </label>
+              <Input
+                placeholder="e.g., B1-12"
+                value={newSlot.slotNumber}
+                onChange={(e) => setNewSlot(prev => ({ ...prev, slotNumber: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Slot Type
+              </label>
+              <Select
+                value={newSlot.slotType}
+                onValueChange={(value: 'REGULAR' | 'COMPACT' | 'EV' | 'HANDICAP_ACCESSIBLE') => 
+                  setNewSlot(prev => ({ ...prev, slotType: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select slot type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="REGULAR">Regular</SelectItem>
+                  <SelectItem value="COMPACT">Compact</SelectItem>
+                  <SelectItem value="EV">EV Charging</SelectItem>
+                  <SelectItem value="HANDICAP_ACCESSIBLE">Handicap Accessible</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateSlot} disabled={isCreating}>
+              {isCreating ? 'Creating...' : 'Create Slot'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteSlotId} onOpenChange={() => setDeleteSlotId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Slot</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this slot? This action cannot be undone.
+              {deleteSlotId && slots.find(s => s.id === deleteSlotId)?.slotNumber && 
+                ` Slot: ${slots.find(s => s.id === deleteSlotId)?.slotNumber}`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteSlotId(null)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => deleteSlotId && handleDeleteSlot(deleteSlotId)}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Slot'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

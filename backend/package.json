@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
+    "postinstall": "npm run build && npx prisma generate",
     "generate": "ts-node scripts/generate-docs.ts",
     "docs": "npm run generate && npm run --watch src/app.ts",
     "docs:dev": "NODE_ENV=development ENABLE_DOCS=true npm run docs",
@@ -10,7 +11,7 @@
     "build:docs": "npm run generate && mkdir -p docs-static && cp -r build/swagger.json docs-static/",
     "build": "npm run generate && tsc -p tsconfig.build.json",
     "build:prod": "NODE_ENV=production npm run build",
-    "start": "node dist/index.js",
+    "start": "npm run build && node dist/index.js",
     "dev": "nodemon --exec ts-node src/index.ts",
     "dev:docs": "NODE_ENV=development ENABLE_DOCS=true npm run dev",
     "dev:studio": "concurrently \"npm run dev\" \"prisma studio --port 5555 --hostname 0.0.0.0\"",
@@ -30,6 +31,7 @@
     "@scalar/api-reference": "^1.33.0",
     "@scalar/express-api-reference": "^0.8.13",
     "@tsoa/runtime": "^6.6.0",
+    "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -41,7 +43,10 @@
     "morgan": "^1.10.1",
     "redis": "^5.7.0",
     "swagger-ui-express": "^5.0.1",
-    "tsoa": "^6.6.0"
+    "tsoa": "^6.6.0",
+    "prisma": "^6.13.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -57,9 +62,6 @@
     "concurrently": "^9.1.0",
     "eslint": "^9.32.0",
     "nodemon": "^3.1.10",
-    "prettier": "^3.6.2",
-    "prisma": "^6.13.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "prettier": "^3.6.2"
   }
 }

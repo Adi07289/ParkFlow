@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/auth-context';
-import { LogOut, BarChart3, Settings, Home, Car, Bell, TrendingUp, AlertTriangle } from 'lucide-react';
+import { LogOut, BarChart3, Settings, Home, Car, Bell, TrendingUp, AlertTriangle, Zap, ShieldAlert, Crown, ArrowLeftRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { NotificationDropdown } from '@/components/notification-dropdown';
 import { notificationsApi } from '@/lib/notifications-api';
@@ -31,6 +31,26 @@ export function Navigation() {
       href: '/parking',
       label: 'Parking',
       icon: Car,
+    },
+    {
+      href: '/ev-charging',
+      label: 'EV Charging',
+      icon: Zap,
+    },
+    {
+      href: '/alerts',
+      label: 'Alerts',
+      icon: ShieldAlert,
+    },
+    {
+      href: '/subscriptions',
+      label: 'Loyalty',
+      icon: Crown,
+    },
+    {
+      href: '/swaps',
+      label: 'Swaps',
+      icon: ArrowLeftRight,
     },
     {
       href: '/analytics',
@@ -65,13 +85,13 @@ export function Navigation() {
   return (
     <header className="bg-white shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-6">
-          <div className="flex items-center space-x-8">
-            <div className="flex items-center">
+        <div className="flex justify-between items-center py-6 min-w-0">
+          <div className="flex items-center space-x-4 min-w-0 overflow-hidden">
+            <div className="flex items-center shrink-0">
               <Home className="h-8 w-8 text-blue-600 mr-2" />
               <h1 className="text-2xl font-bold text-gray-900">ParkFlow</h1>
             </div>
-            <nav className="flex space-x-4">
+            <nav className="flex space-x-1 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;

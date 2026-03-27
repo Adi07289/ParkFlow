@@ -26,9 +26,13 @@ setupDocumentation(app);
 // CORS configuration
 const corsOptions = {
   origin: [
+    "https://parkflow-frontend.vercel.app",
+    "https://frontend-4tn2xd3a7-adi07289s-projects.vercel.app",
+    "https://frontend-4q7ne2bs2-adi07289s-projects.vercel.app",
     process.env.FRONTEND_URL || "http://localhost:3000",
     "http://localhost:3001",
-    "http://localhost:3002"
+    "http://localhost:3002",
+    "http://localhost:3333"
   ],
   credentials: true,
   optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
