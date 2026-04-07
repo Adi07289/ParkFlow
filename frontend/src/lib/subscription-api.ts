@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+import api from './api-client';
 
 export interface TierBenefits {
   tier: string;
@@ -27,32 +25,32 @@ export interface SubscriptionData {
 
 export const subscriptionApi = {
   async createSubscription(userId: string, tier: string, durationMonths: number = 1) {
-    const response = await axios.post(`${API_BASE_URL}/subscriptions`, { userId, tier, durationMonths });
+    const response = await api.post('/subscriptions', { userId, tier, durationMonths });
     return response.data;
   },
 
   async getSubscription(userId: string): Promise<SubscriptionData> {
-    const response = await axios.get(`${API_BASE_URL}/subscriptions/${userId}`);
+    const response = await api.get(`/subscriptions/${userId}`);
     return response.data.data;
   },
 
   async addPoints(userId: string, amountSpent: number) {
-    const response = await axios.post(`${API_BASE_URL}/subscriptions/${userId}/points/add`, { amountSpent });
+    const response = await api.post(`/subscriptions/${userId}/points/add`, { amountSpent });
     return response.data;
   },
 
   async redeemPoints(userId: string, points: number) {
-    const response = await axios.post(`${API_BASE_URL}/subscriptions/${userId}/points/redeem`, { points });
+    const response = await api.post(`/subscriptions/${userId}/points/redeem`, { points });
     return response.data;
   },
 
   async getTiers(): Promise<TierBenefits[]> {
-    const response = await axios.get(`${API_BASE_URL}/subscriptions/tiers/all`);
+    const response = await api.get('/subscriptions/tiers/all');
     return response.data.data.tiers;
   },
 
   async cancelSubscription(userId: string) {
-    const response = await axios.delete(`${API_BASE_URL}/subscriptions/${userId}`);
+    const response = await api.delete(`/subscriptions/${userId}`);
     return response.data;
   },
 };

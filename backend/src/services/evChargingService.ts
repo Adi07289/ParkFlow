@@ -158,6 +158,17 @@ class EVChargingService {
    */
   async notifyNextInQueue(): Promise<{ success: boolean; message: string; data?: any }> {
     try {
+      const availableEVSlots = await prisma.parkingSlot.count({
+        where: { slotType: SlotType.EV, status: SlotStatus.AVAILABLE }
+      });
+
+      if (availableEVSlots === 0) {
+        return {
+          success: false,
+          message: 'No EV charging slot is currently available to notify the next vehicle.'
+        };
+      }
+
       const nextEntry = await prisma.eVChargingQueue.findFirst({
         where: { status: EVQueueStatus.WAITING },
         include: { vehicle: true },

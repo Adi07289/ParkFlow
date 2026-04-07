@@ -252,7 +252,7 @@ export default function AnalyticsPage() {
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">₹{totalRevenue.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
-                  +12% from last {selectedPeriod}
+                  Recorded in the selected {selectedPeriod} window
                 </p>
               </CardContent>
             </Card>

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "postinstall": "npm run build && npx prisma generate",
+    "postinstall": "npx prisma generate && npm run build",
     "generate": "ts-node scripts/generate-docs.ts",
     "docs": "npm run generate && npm run --watch src/app.ts",
     "docs:dev": "NODE_ENV=development ENABLE_DOCS=true npm run docs",
@@ -41,11 +41,12 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
+    "nodemailer": "^6.10.1",
+    "prisma": "^6.13.0",
     "redis": "^5.7.0",
     "swagger-ui-express": "^5.0.1",
-    "tsoa": "^6.6.0",
-    "prisma": "^6.13.0",
     "ts-node": "^10.9.2",
+    "tsoa": "^6.6.0",
     "typescript": "^5.8.3"
   },
   "devDependencies": {
@@ -56,6 +57,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.1.0",
+    "@types/nodemailer": "^6.4.23",
     "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",

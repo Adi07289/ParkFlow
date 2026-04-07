@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { AxiosError } from 'axios';
+import { Suspense, useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navigation } from '@/components/navigation';
 import { subscriptionApi, TierBenefits, SubscriptionData } from '@/lib/subscription-api';
+import { userApi, UserResponse } from '@/lib/user-api';
+import { useAuth } from '@/contexts/auth-context';
 import {
   Crown,
-  RefreshCw,
   Star,
   Gift,
-  IndianRupee,
   Award,
   Sparkles,
   Percent,
@@ -20,8 +21,11 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-export default function SubscriptionsPage() {
+function SubscriptionPageContent() {
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [tiers, setTiers] = useState<TierBenefits[]>([]);
+  const [users, setUsers] = useState<UserResponse[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userIdInput, setUserIdInput] = useState('');
@@ -38,11 +42,20 @@ export default function SubscriptionsPage() {
     }
   }, []);
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      const userData = await userApi.getAllUsers();
+      setUsers(userData);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  }, []);
+
   const fetchSubscription = useCallback(async (userId: string) => {
     try {
       const data = await subscriptionApi.getSubscription(userId);
       setSubscription(data);
-    } catch (error) {
+    } catch {
       setSubscription(null);
     }
   }, []);
@@ -50,11 +63,28 @@ export default function SubscriptionsPage() {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-      await fetchTiers();
+      await Promise.all([fetchTiers(), fetchUsers()]);
       setIsLoading(false);
     };
     init();
-  }, [fetchTiers]);
+  }, [fetchTiers, fetchUsers]);
+
+  useEffect(() => {
+    const queryUserId = searchParams.get('userId')?.trim();
+
+    if (queryUserId) {
+      setUserIdInput(queryUserId);
+      setLookupUserId(queryUserId);
+      fetchSubscription(queryUserId);
+      return;
+    }
+
+    if (user?.id && !lookupUserId && !userIdInput) {
+      setUserIdInput(user.id);
+      setLookupUserId(user.id);
+      fetchSubscription(user.id);
+    }
+  }, [fetchSubscription, lookupUserId, searchParams, user?.id, userIdInput]);
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setActionMessage({ type, text });
@@ -76,8 +106,8 @@ export default function SubscriptionsPage() {
       const result = await subscriptionApi.createSubscription(lookupUserId, tier, 1);
       showMessage(result.success ? 'success' : 'error', result.message);
       if (result.success) fetchSubscription(lookupUserId);
-    } catch (error: any) {
-      showMessage('error', error.response?.data?.message || 'Failed to subscribe');
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to subscribe'));
     }
   };
 
@@ -90,8 +120,8 @@ export default function SubscriptionsPage() {
         setRedeemPoints('');
         fetchSubscription(lookupUserId);
       }
-    } catch (error: any) {
-      showMessage('error', error.response?.data?.message || 'Failed to redeem');
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to redeem'));
     }
   };
 
@@ -101,10 +131,24 @@ export default function SubscriptionsPage() {
       const result = await subscriptionApi.cancelSubscription(lookupUserId);
       showMessage(result.success ? 'success' : 'error', result.message);
       if (result.success) setSubscription(null);
-    } catch (error: any) {
-      showMessage('error', error.response?.data?.message || 'Failed to cancel');
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to cancel'));
     }
   };
+
+  const selectedUser = users.find((candidate) => candidate.id === lookupUserId);
+  const suggestedUsers = users.filter((candidate) => {
+    const query = userIdInput.trim().toLowerCase();
+
+    if (!query) {
+      return true;
+    }
+
+    return (
+      candidate.email.toLowerCase().includes(query) ||
+      candidate.id.toLowerCase().includes(query)
+    );
+  }).slice(0, 6);
 
   const getTierColor = (tier: string) => {
     switch (tier) {
@@ -160,16 +204,53 @@ export default function SubscriptionsPage() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-lg">Look Up User Subscription</CardTitle>
+              <CardDescription>
+                Select a real user record below or paste an ID if you already have one.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Enter User ID"
+                  placeholder="Search by user email or ID"
                   value={userIdInput}
                   onChange={(e) => setUserIdInput(e.target.value)}
                 />
                 <Button onClick={handleLookup}>Look Up</Button>
               </div>
+
+              {selectedUser && (
+                <div className="rounded-lg border bg-purple-50 p-3 text-sm text-purple-900">
+                  Selected user: <span className="font-semibold">{selectedUser.email}</span>
+                  <span className="ml-2 font-mono text-xs">{selectedUser.id}</span>
+                </div>
+              )}
+
+              {suggestedUsers.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Quick select</p>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {suggestedUsers.map((candidate) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        onClick={async () => {
+                          setUserIdInput(candidate.id);
+                          setLookupUserId(candidate.id);
+                          await fetchSubscription(candidate.id);
+                        }}
+                        className={`rounded-lg border p-3 text-left transition-colors ${
+                          lookupUserId === candidate.id
+                            ? 'border-purple-400 bg-purple-50'
+                            : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50/40'
+                        }`}
+                      >
+                        <div className="font-medium text-gray-900">{candidate.email}</div>
+                        <div className="font-mono text-xs text-gray-500">{candidate.id}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -273,4 +354,28 @@ export default function SubscriptionsPage() {
       </main>
     </div>
   );
+}
+
+function SubscriptionsPageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+    </div>
+  );
+}
+
+export default function SubscriptionsPage() {
+  return (
+    <Suspense fallback={<SubscriptionsPageFallback />}>
+      <SubscriptionPageContent />
+    </Suspense>
+  );
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    return error.response?.data?.message || fallback;
+  }
+
+  return fallback;
 }

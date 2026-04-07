@@ -103,17 +103,8 @@ const models: TsoaRoute.Models = {
     "ListSwapRequest": {
         "dataType": "refObject",
         "properties": {
-            "userId": {"dataType":"string","required":true},
             "sessionId": {"dataType":"string","required":true},
             "listingPrice": {"dataType":"double","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "ClaimSwapRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "userId": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -234,7 +225,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "success": {"dataType":"boolean","required":true},
             "message": {"dataType":"string","required":true},
-            "data": {"dataType":"nestedObjectLiteral","nestedProperties":{"billingType":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["HOURLY"]},{"dataType":"enum","enums":["DAY_PASS"]}],"required":true},"entryTime":{"dataType":"datetime","required":true},"slotNumber":{"dataType":"string","required":true},"slotId":{"dataType":"string","required":true},"vehicleId":{"dataType":"string","required":true},"sessionId":{"dataType":"string","required":true}}},
+            "data": {"dataType":"nestedObjectLiteral","nestedProperties":{"ownerEmail":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},"userId":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},"billingType":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["HOURLY"]},{"dataType":"enum","enums":["DAY_PASS"]}],"required":true},"entryTime":{"dataType":"datetime","required":true},"slotNumber":{"dataType":"string","required":true},"slotId":{"dataType":"string","required":true},"vehicleId":{"dataType":"string","required":true},"sessionId":{"dataType":"string","required":true}}},
         },
         "additionalProperties": false,
     },
@@ -246,6 +237,7 @@ const models: TsoaRoute.Models = {
             "vehicleType": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["CAR"]},{"dataType":"enum","enums":["BIKE"]},{"dataType":"enum","enums":["EV"]},{"dataType":"enum","enums":["HANDICAP_ACCESSIBLE"]}],"required":true},
             "billingType": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["HOURLY"]},{"dataType":"enum","enums":["DAY_PASS"]}],"required":true},
             "slotId": {"dataType":"string"},
+            "userId": {"dataType":"string"},
         },
         "additionalProperties": false,
     },
@@ -264,7 +256,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "success": {"dataType":"boolean","required":true},
             "message": {"dataType":"string","required":true},
-            "data": {"dataType":"nestedObjectLiteral","nestedProperties":{"billingType":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["HOURLY"]},{"dataType":"enum","enums":["DAY_PASS"]}],"required":true},"billingAmount":{"dataType":"double","required":true},"duration":{"dataType":"string","required":true},"exitTime":{"dataType":"datetime","required":true},"entryTime":{"dataType":"datetime","required":true},"sessionId":{"dataType":"string","required":true}}},
+            "data": {"dataType":"nestedObjectLiteral","nestedProperties":{"ownerEmail":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},"userId":{"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},"hasSubscriptionDiscount":{"dataType":"boolean"},"discountPercent":{"dataType":"double"},"discountAmount":{"dataType":"double"},"originalBillingAmount":{"dataType":"double"},"billingType":{"dataType":"union","subSchemas":[{"dataType":"enum","enums":["HOURLY"]},{"dataType":"enum","enums":["DAY_PASS"]}],"required":true},"billingAmount":{"dataType":"double","required":true},"duration":{"dataType":"string","required":true},"exitTime":{"dataType":"datetime","required":true},"entryTime":{"dataType":"datetime","required":true},"sessionId":{"dataType":"string","required":true}}},
         },
         "additionalProperties": false,
     },
@@ -400,7 +392,6 @@ const models: TsoaRoute.Models = {
         "properties": {
             "success": {"dataType":"boolean","required":true},
             "message": {"dataType":"string","required":true},
-            "otp": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -806,6 +797,7 @@ export function RegisterRoutes(app: Router) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsSwapController_listForSwap: Record<string, TsoaRoute.ParameterSchema> = {
                 requestBody: {"in":"body","name":"requestBody","required":true,"ref":"ListSwapRequest"},
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.post('/api/swaps',
             ...(fetchMiddlewares<RequestHandler>(SwapController)),
@@ -865,7 +857,7 @@ export function RegisterRoutes(app: Router) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsSwapController_claimSwap: Record<string, TsoaRoute.ParameterSchema> = {
                 swapId: {"in":"path","name":"swapId","required":true,"dataType":"string"},
-                requestBody: {"in":"body","name":"requestBody","required":true,"ref":"ClaimSwapRequest"},
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.post('/api/swaps/:swapId/claim',
             ...(fetchMiddlewares<RequestHandler>(SwapController)),
@@ -896,7 +888,7 @@ export function RegisterRoutes(app: Router) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsSwapController_cancelListing: Record<string, TsoaRoute.ParameterSchema> = {
                 swapId: {"in":"path","name":"swapId","required":true,"dataType":"string"},
-                userId: {"in":"query","name":"userId","required":true,"dataType":"string"},
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.delete('/api/swaps/:swapId',
             ...(fetchMiddlewares<RequestHandler>(SwapController)),
@@ -926,9 +918,9 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsSwapController_getUserHistory: Record<string, TsoaRoute.ParameterSchema> = {
-                userId: {"in":"path","name":"userId","required":true,"dataType":"string"},
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
-        app.get('/api/swaps/history/:userId',
+        app.get('/api/swaps/history/me',
             ...(fetchMiddlewares<RequestHandler>(SwapController)),
             ...(fetchMiddlewares<RequestHandler>(SwapController.prototype.getUserHistory)),
 

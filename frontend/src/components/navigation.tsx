@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/auth-context';
-import { LogOut, BarChart3, Settings, Home, Car, Bell, TrendingUp, AlertTriangle, Zap, ShieldAlert, Crown, ArrowLeftRight } from 'lucide-react';
+import { LogOut, BarChart3, Settings, Home, Car, Bell, TrendingUp, Zap, ShieldAlert, Crown, ArrowLeftRight, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { NotificationDropdown } from '@/components/notification-dropdown';
 import { notificationsApi } from '@/lib/notifications-api';
@@ -46,6 +46,11 @@ export function Navigation() {
       href: '/subscriptions',
       label: 'Loyalty',
       icon: Crown,
+    },
+    {
+      href: '/users',
+      label: 'Users',
+      icon: Users,
     },
     {
       href: '/swaps',

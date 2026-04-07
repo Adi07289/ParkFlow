@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { VehicleType, BillingType, SlotStatus, SessionStatus, SlotType } from '@prisma/client';
 import { slotService } from './slotService';
 import { billingService } from './billingService';
+import { subscriptionService } from './subscriptionService';
 
 const prisma = new PrismaClient();
 
@@ -10,6 +11,7 @@ interface VehicleEntryRequest {
   vehicleType: VehicleType;
   billingType: BillingType;
   slotId?: string;
+  userId?: string;
 }
 
 interface SearchFilters {
@@ -49,6 +51,19 @@ class ParkingService {
       }
 
       let slotAssignmentResult;
+
+      if (data.userId) {
+        const user = await prisma.user.findUnique({
+          where: { id: data.userId }
+        });
+
+        if (!user) {
+          return {
+            success: false,
+            message: 'Selected user not found'
+          };
+        }
+      }
 
       if (data.slotId) {
         // Manual slot assignment with row locking
@@ -119,12 +134,14 @@ class ParkingService {
           data: {
             vehicleId: vehicle.id,
             slotId: assignedSlot.id,
+            userId: data.userId,
             billingType: data.billingType,
             status: SessionStatus.ACTIVE
           },
           include: {
             vehicle: true,
-            slot: true
+            slot: true,
+            user: true
           }
         });
       }, {
@@ -141,7 +158,9 @@ class ParkingService {
           slotId: assignedSlot.id,
           slotNumber: assignedSlot.slotNumber,
           entryTime: session.entryTime,
-          billingType: session.billingType
+          billingType: session.billingType,
+          userId: session.userId,
+          ownerEmail: session.user?.email || null
         }
       };
     } catch (error) {
@@ -159,7 +178,8 @@ class ParkingService {
         },
         include: {
           vehicle: true,
-          slot: true
+          slot: true,
+          user: true
         }
       });
 
@@ -179,7 +199,18 @@ class ParkingService {
         activeSession.billingType
       );
 
-      const { amount: billingAmount, duration: durationString } = billingResult;
+      const { amount: baseBillingAmount, duration: durationString } = billingResult;
+      const discountResult = activeSession.userId
+        ? await subscriptionService.applyDiscount(activeSession.userId, baseBillingAmount)
+        : {
+            originalAmount: baseBillingAmount,
+            discountPercent: 0,
+            discountAmount: 0,
+            finalAmount: baseBillingAmount,
+            hasSubscription: false
+          };
+
+      const billingAmount = discountResult.finalAmount;
 
       // Complete session and free slot
       await prisma.$transaction(async (tx) => {
@@ -200,6 +231,10 @@ class ParkingService {
         });
       });
 
+      if (activeSession.userId && billingAmount > 0) {
+        await subscriptionService.addLoyaltyPoints(activeSession.userId, billingAmount);
+      }
+
       return {
         success: true,
         message: 'Vehicle exit registered successfully',
@@ -212,10 +247,16 @@ class ParkingService {
           exitTime,
           duration: durationString,
           billingAmount,
+          originalBillingAmount: discountResult.originalAmount,
+          discountAmount: discountResult.discountAmount,
+          discountPercent: discountResult.discountPercent,
+          hasSubscriptionDiscount: discountResult.hasSubscription,
           billingType: activeSession.billingType,
           durationHours: billingResult.durationHours,
           appliedRate: billingResult.appliedRate,
-          currency: billingService.getCurrency()
+          currency: billingService.getCurrency(),
+          userId: activeSession.userId,
+          ownerEmail: activeSession.user?.email || null
         }
       };
     } catch (error) {
@@ -331,7 +372,8 @@ class ParkingService {
           where,
           include: {
             vehicle: true,
-            slot: true
+            slot: true,
+            user: true
           },
           orderBy: { entryTime: 'desc' },
           skip: (filters.page - 1) * filters.limit,
@@ -342,13 +384,18 @@ class ParkingService {
 
       const data = sessions.map(session => ({
         sessionId: session.id,
-        vehicle: {
-          numberPlate: session.vehicle.numberPlate,
-          vehicleType: session.vehicle.vehicleType
-        },
-        slot: {
-          number: session.slot.slotNumber,
-          type: session.slot.slotType
+          vehicle: {
+            id: session.vehicle.id,
+            numberPlate: session.vehicle.numberPlate,
+            vehicleType: session.vehicle.vehicleType
+          },
+          user: session.user ? {
+            id: session.user.id,
+            email: session.user.email
+          } : null,
+          slot: {
+            number: session.slot.slotNumber,
+            type: session.slot.slotType
         },
         entryTime: session.entryTime,
         duration: this.formatDuration(Date.now() - session.entryTime.getTime()),
@@ -392,7 +439,8 @@ class ParkingService {
           where,
           include: {
             vehicle: true,
-            slot: true
+            slot: true,
+            user: true
           },
           orderBy: { exitTime: 'desc' },
           skip: (filters.page - 1) * filters.limit,
@@ -403,13 +451,18 @@ class ParkingService {
 
       const data = sessions.map(session => ({
         sessionId: session.id,
-        vehicle: {
-          numberPlate: session.vehicle.numberPlate,
-          vehicleType: session.vehicle.vehicleType
-        },
-        slot: {
-          number: session.slot.slotNumber,
-          type: session.slot.slotType
+          vehicle: {
+            id: session.vehicle.id,
+            numberPlate: session.vehicle.numberPlate,
+            vehicleType: session.vehicle.vehicleType
+          },
+          user: session.user ? {
+            id: session.user.id,
+            email: session.user.email
+          } : null,
+          slot: {
+            number: session.slot.slotNumber,
+            type: session.slot.slotType
         },
         entryTime: session.entryTime,
         exitTime: session.exitTime,

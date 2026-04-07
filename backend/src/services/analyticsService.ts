@@ -197,6 +197,8 @@ class AnalyticsService {
         });
 
         data.totalOccupiedTime += slotOccupiedTime;
+        const slotOccupancy = periodMs > 0 ? (slotOccupiedTime / periodMs) * 100 : 0;
+        data.peakOccupancy = Math.max(data.peakOccupancy, slotOccupancy);
       });
 
       // Convert to result format
@@ -207,7 +209,7 @@ class AnalyticsService {
           slotType,
           totalSlots: data.totalSlots,
           averageOccupancy: Math.round(averageOccupancy * 100) / 100,
-          peakOccupancy: Math.min(100, Math.round(averageOccupancy * 1.3)), // Estimate peak as 30% higher
+          peakOccupancy: Math.round(Math.min(100, data.peakOccupancy) * 100) / 100,
           totalRevenue: Math.round(data.totalRevenue),
           utilizationRate: Math.round(averageOccupancy * 100) / 100,
           revenuePerSlot: data.totalSlots > 0 ? Math.round(data.totalRevenue / data.totalSlots) : 0

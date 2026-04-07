@@ -1,15 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true, // Important for cookies
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import api from './api-client';
 
 export interface UserResponse {
   id: string;
@@ -56,17 +45,3 @@ export const userApi = {
     await api.delete(`/users/${userId}`);
   },
 };
-
-// Add response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);

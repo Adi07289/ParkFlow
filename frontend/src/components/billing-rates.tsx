@@ -161,14 +161,14 @@ export function BillingRatesComponent() {
               <div className="mt-4 p-3 bg-green-50 rounded-lg">
                 <div className="flex items-center text-green-800 mb-1">
                   <Info className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Day Pass Benefits</span>
+                  <span className="font-medium">Day Pass Rules</span>
                 </div>
                 <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Flat fee collected at entry</li>
-                  <li>• No additional charges on exit</li>
-                  <li>• Valid until mall closes</li>
-                  <li>• Perfect for shopping & leisure</li>
-                  <li>• Duration tracked for reporting only</li>
+                  <li>• Flat day-pass pricing is applied when the vehicle exits</li>
+                  <li>• Exit processing still records total stay duration for the receipt</li>
+                  <li>• Long stays can be cheaper on day pass than hourly slabs</li>
+                  <li>• Best suited for all-day parking visits</li>
+                  <li>• Final amount is confirmed during exit processing</li>
                 </ul>
               </div>
             </div>
@@ -250,7 +250,7 @@ export function BillingRatesComponent() {
               <h4 className="font-medium text-gray-800 mb-2">Payment & Processing</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• All rates are in Indian Rupees (₹)</li>
-                <li>• Payment processed automatically on exit</li>
+                <li>• Payment is finalized during exit processing</li>
                 <li>• Digital receipts available for all transactions</li>
                 <li>• GST included in all displayed rates</li>
               </ul>

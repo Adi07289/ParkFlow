@@ -64,6 +64,7 @@ function validateConfig() {
   console.log('Environment: NODE_ENV =', process.env.NODE_ENV || 'development');
   console.log('Database: DATABASE_URL is configured');
   console.log('Redis: REDIS_URL =', process.env.REDIS_URL || 'default connection');
+  console.log('Email: SMTP_HOST =', process.env.SMTP_HOST || 'not configured');
 }
 
 // Graceful shutdown

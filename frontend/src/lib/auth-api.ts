@@ -1,15 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true, // Important for cookies
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import api from './api-client';
 
 export interface SendOTPRequest {
   email: string;
@@ -18,7 +7,6 @@ export interface SendOTPRequest {
 export interface SendOTPResponse {
   success: boolean;
   message: string;
-  otp: string;
 }
 
 export interface VerifyOTPRequest {
@@ -86,24 +74,3 @@ export const authApi = {
     return response.data;
   },
 };
-
-// Add response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Clear the invalid token cookie
-      if (typeof window !== 'undefined') {
-        // Clear cookie by setting it with expired date
-        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      }
-    }
-    
-    // Add better error messages for network issues
-    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-      error.message = 'Cannot connect to server. Please check if the backend is running.';
-    }
-    
-    return Promise.reject(error);
-  }
-);

@@ -1,15 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import api from './api-client';
 
 // Slot API interfaces
 export interface Slot {
@@ -51,35 +40,35 @@ export const slotsApi = {
     page?: number;
     limit?: number;
   }): Promise<SlotsResponse> {
-    const response = await axios.get(`${API_BASE_URL}/slots`, { params });
+    const response = await api.get('/slots', { params });
     return response.data.data;
   },
 
   async getSlot(slotId: string): Promise<Slot> {
-    const response = await axios.get(`${API_BASE_URL}/slots/${slotId}`);
+    const response = await api.get(`/slots/${slotId}`);
     return response.data.data;
   },
 
   async createSlot(data: CreateSlotRequest): Promise<Slot> {
-    const response = await axios.post(`${API_BASE_URL}/slots`, data);
+    const response = await api.post('/slots', data);
     return response.data.data;
   },
 
   async updateSlot(slotId: string, data: UpdateSlotRequest): Promise<Slot> {
-    const response = await axios.put(`${API_BASE_URL}/slots/${slotId}`, data);
+    const response = await api.put(`/slots/${slotId}`, data);
     return response.data.data;
   },
 
   async setMaintenance(slotId: string): Promise<void> {
-    await axios.post(`${API_BASE_URL}/slots/${slotId}/maintenance`);
+    await api.post(`/slots/${slotId}/maintenance`);
   },
 
   async releaseMaintenance(slotId: string): Promise<void> {
-    await axios.post(`${API_BASE_URL}/slots/${slotId}/release-maintenance`);
+    await api.post(`/slots/${slotId}/release-maintenance`);
   },
 
   async bulkCreateSlots(slots: CreateSlotRequest[]): Promise<{ count: number }> {
-    const response = await axios.post(`${API_BASE_URL}/slots/bulk`, slots);
+    const response = await api.post('/slots/bulk', slots);
     return response.data.data;
   },
 
@@ -101,7 +90,7 @@ export const slotsApi = {
     message?: string;
   }> {
     const params = vehicleType ? { vehicleType } : {};
-    const response = await axios.get(`${API_BASE_URL}/slots/available`, { params });
+    const response = await api.get('/slots/available', { params });
     return response.data;
   },
 
@@ -114,7 +103,7 @@ export const slotsApi = {
       slotType: 'REGULAR' | 'COMPACT' | 'EV' | 'HANDICAP_ACCESSIBLE';
     };
   }> {
-    const response = await axios.post(`${API_BASE_URL}/slots/${slotId}/reserve`);
+    const response = await api.post(`/slots/${slotId}/reserve`);
     return response.data;
   },
 
