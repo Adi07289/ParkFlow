@@ -7,7 +7,17 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Define protected routes
-  const protectedRoutes = ['/dashboard'];
+  const protectedRoutes = [
+    '/dashboard',
+    '/parking',
+    '/analytics',
+    '/alerts',
+    '/maintenance',
+    '/ev-charging',
+    '/subscriptions',
+    '/swaps',
+    '/users',
+  ];
   const authRoutes = ['/auth/login', '/auth/register'];
 
   // Check if current path is protected

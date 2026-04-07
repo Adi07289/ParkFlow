@@ -1,14 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
+import { AuthRequest } from './authMiddleware';
 
-export interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-  };
-}
-
-export const authMiddleware = async (
+export const requireAuth = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -28,12 +22,11 @@ export const authMiddleware = async (
     if (!decoded) {
       res.status(401).json({
         success: false,
-        message: 'Invalid token.'
+        message: 'Invalid or expired token.'
       });
       return;
     }
 
-    // Verify user still exists
     const user = await authService.getUserById(decoded.userId);
     if (!user) {
       res.status(401).json({
@@ -45,12 +38,12 @@ export const authMiddleware = async (
 
     req.user = {
       userId: decoded.userId,
-      email: decoded.email
+      email: decoded.email,
     };
 
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('Require auth middleware error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { createClient } from 'redis';
 import { SendOTPResponse, VerifyOTPResponse, AuthUser, JWTPayload } from '../types/auth.types';
+import { emailService } from './emailService';
 
 const prisma = new PrismaClient();
 const redis = createClient({
@@ -26,8 +27,7 @@ export class AuthService {
       if (existingUser) {
         return {
           success: false,
-          message: 'User already exists with this email',
-          otp: ''
+          message: 'User already exists with this email'
         };
       }
 
@@ -38,17 +38,25 @@ export class AuthService {
       const otpKey = `otp:register:${email}`;
       await redis.setEx(otpKey, this.OTP_EXPIRY, otp);
 
+      const emailResult = await emailService.sendOTPEmail(email, otp, 'register');
+
+      if (!emailResult.success) {
+        await redis.del(otpKey);
+        return {
+          success: false,
+          message: emailResult.message
+        };
+      }
+
       return {
         success: true,
-        message: 'OTP sent successfully',
-        otp: otp // Always return for frontend display
+        message: emailResult.message
       };
     } catch (error) {
       console.error('Error sending register OTP:', error);
       return {
         success: false,
-        message: 'Failed to send OTP',
-        otp: ''
+        message: 'Failed to send OTP'
       };
     }
   }
@@ -120,8 +128,7 @@ export class AuthService {
       if (!user) {
         return {
           success: false,
-          message: 'User not found with this email',
-          otp: ''
+          message: 'User not found with this email'
         };
       }
 
@@ -132,17 +139,25 @@ export class AuthService {
       const otpKey = `otp:login:${email}`;
       await redis.setEx(otpKey, this.OTP_EXPIRY, otp);
 
+      const emailResult = await emailService.sendOTPEmail(email, otp, 'login');
+
+      if (!emailResult.success) {
+        await redis.del(otpKey);
+        return {
+          success: false,
+          message: emailResult.message
+        };
+      }
+
       return {
         success: true,
-        message: 'OTP sent successfully',
-        otp: otp // Always return for frontend display
+        message: emailResult.message
       };
     } catch (error) {
       console.error('Error sending login OTP:', error);
       return {
         success: false,
-        message: 'Failed to send OTP',
-        otp: ''
+        message: 'Failed to send OTP'
       };
     }
   }

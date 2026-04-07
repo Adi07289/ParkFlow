@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+import api from './api-client';
 
 // Billing API interfaces
 export interface BillingConfig {
@@ -47,17 +45,17 @@ export interface BillingCalculation {
 // API functions
 export const billingApi = {
   async getBillingConfig(): Promise<BillingConfig> {
-    const response = await axios.get(`${API_BASE_URL}/billing/config`);
+    const response = await api.get('/billing/config');
     return response.data.data;
   },
 
   async getBillingRates(): Promise<BillingRates> {
-    const response = await axios.get(`${API_BASE_URL}/billing/rates`);
+    const response = await api.get('/billing/rates');
     return response.data.data;
   },
 
   async calculateCostEstimate(entryTime: string, billingType: 'HOURLY' | 'DAY_PASS'): Promise<CostEstimate> {
-    const response = await axios.post(`${API_BASE_URL}/billing/estimate`, {
+    const response = await api.post('/billing/estimate', {
       entryTime,
       billingType
     });
@@ -69,7 +67,7 @@ export const billingApi = {
     exitTime: string, 
     billingType: 'HOURLY' | 'DAY_PASS'
   ): Promise<BillingCalculation> {
-    const response = await axios.get(`${API_BASE_URL}/billing/calculate`, {
+    const response = await api.get('/billing/calculate', {
       params: {
         entryTime,
         exitTime,

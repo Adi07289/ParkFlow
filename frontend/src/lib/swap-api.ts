@@ -1,12 +1,13 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+import api from './api-client';
 
 export interface SwapListing {
   id: string;
+  sessionId: string;
   slotNumber: string;
   slotType: string;
   vehicleNumberPlate: string;
+  originalUserId: string;
+  ownerEmail?: string | null;
   originalPrice: number;
   listingPrice: number;
   listedAt: string;
@@ -29,28 +30,28 @@ export interface SwapHistory {
 }
 
 export const swapApi = {
-  async listForSwap(userId: string, sessionId: string, listingPrice: number) {
-    const response = await axios.post(`${API_BASE_URL}/swaps`, { userId, sessionId, listingPrice });
+  async listForSwap(sessionId: string, listingPrice: number) {
+    const response = await api.post('/swaps', { sessionId, listingPrice });
     return response.data;
   },
 
   async getAvailableSwaps(): Promise<SwapListing[]> {
-    const response = await axios.get(`${API_BASE_URL}/swaps`);
+    const response = await api.get('/swaps');
     return response.data.data.swaps;
   },
 
-  async claimSwap(swapId: string, userId: string) {
-    const response = await axios.post(`${API_BASE_URL}/swaps/${swapId}/claim`, { userId });
+  async claimSwap(swapId: string) {
+    const response = await api.post(`/swaps/${swapId}/claim`);
     return response.data;
   },
 
-  async cancelListing(swapId: string, userId: string) {
-    const response = await axios.delete(`${API_BASE_URL}/swaps/${swapId}`, { params: { userId } });
+  async cancelListing(swapId: string) {
+    const response = await api.delete(`/swaps/${swapId}`);
     return response.data;
   },
 
-  async getUserHistory(userId: string): Promise<SwapHistory[]> {
-    const response = await axios.get(`${API_BASE_URL}/swaps/history/${userId}`);
+  async getUserHistory(): Promise<SwapHistory[]> {
+    const response = await api.get('/swaps/history/me');
     return response.data.data.history;
   },
 };

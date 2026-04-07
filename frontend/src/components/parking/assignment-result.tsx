@@ -8,14 +8,11 @@ import {
   CheckCircle, 
   MapPin, 
   Clock, 
-  Car, 
-  Bike, 
-  Zap, 
-  Accessibility, 
   IndianRupee,
   Plus,
   FileText,
-  Printer
+  Printer,
+  UserCircle
 } from 'lucide-react';
 
 interface AssignmentData {
@@ -25,6 +22,8 @@ interface AssignmentData {
   slotNumber: string;
   entryTime: string;
   billingType: 'HOURLY' | 'DAY_PASS';
+  userId?: string;
+  ownerEmail?: string | null;
   message: string;
 }
 
@@ -34,22 +33,6 @@ interface AssignmentResultProps {
 }
 
 export function AssignmentResult({ result, onNewAssignment }: AssignmentResultProps) {
-  console.log('AssignmentResult received result:', result);
-  const getVehicleIcon = (vehicleType?: string) => {
-    switch (vehicleType) {
-      case 'CAR':
-        return Car;
-      case 'BIKE':
-        return Bike;
-      case 'EV':
-        return Zap;
-      case 'HANDICAP_ACCESSIBLE':
-        return Accessibility;
-      default:
-        return Car;
-    }
-  };
-
   const getBillingTypeBadge = (billingType: string) => {
     return (
       <Badge variant={billingType === 'HOURLY' ? 'default' : 'secondary'}>
@@ -67,13 +50,13 @@ export function AssignmentResult({ result, onNewAssignment }: AssignmentResultPr
     
     const entryDateTime = formatEntryTime(result.entryTime);
     
-    // Create a simple receipt format
     const receiptContent = `
       PARKING RECEIPT
       ================
       
       Session ID: ${result.sessionId}
       Slot Number: ${result.slotNumber}
+      Session Owner: ${result.ownerEmail || 'Walk-in'}
       Entry Date: ${entryDateTime.date}
       Entry Time: ${entryDateTime.time}
       Billing Type: ${result.billingType}
@@ -83,10 +66,9 @@ export function AssignmentResult({ result, onNewAssignment }: AssignmentResultPr
       ================
       Thank you for parking with us!
     `;
-    
-    // For demo purposes, just show an alert
-    // In a real application, you'd implement proper printing
-    alert('Printing receipt...\n\n' + receiptContent);
+
+    console.info(receiptContent);
+    window.print();
   };
 
   if (!result) {
@@ -142,6 +124,14 @@ export function AssignmentResult({ result, onNewAssignment }: AssignmentResultPr
               <div>
                 <div className="text-sm text-gray-500">Billing Type</div>
                 <div>{getBillingTypeBadge(result.billingType)}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center">
+              <UserCircle className="h-5 w-5 text-purple-600 mr-2" />
+              <div>
+                <div className="text-sm text-gray-500">Session Owner</div>
+                <div className="font-medium">{result.ownerEmail || 'Walk-in parking'}</div>
               </div>
             </div>
 
@@ -216,6 +206,7 @@ export function AssignmentResult({ result, onNewAssignment }: AssignmentResultPr
           <h4 className="font-medium text-blue-800 mb-2">Important Notes:</h4>
           <ul className="text-sm text-blue-700 space-y-1">
             <li>• Keep your receipt for exit processing</li>
+            <li>• {result.ownerEmail ? `Subscription and loyalty will apply for ${result.ownerEmail} at exit` : 'Walk-in sessions will follow standard parking billing'}</li>
             <li>• {result.billingType === 'HOURLY' ? 'Billing starts immediately at hourly rates' : 'Day pass valid until end of day'}</li>
             <li>• Vehicle exit can be processed at any time</li>
             <li>• Contact support if you need assistance</li>

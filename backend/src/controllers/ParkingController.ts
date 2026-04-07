@@ -18,6 +18,7 @@ interface VehicleEntryRequest {
   vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
   billingType: 'HOURLY' | 'DAY_PASS';
   slotId?: string; // Optional for manual slot override
+  userId?: string;
 }
 
 interface VehicleEntryResponse {
@@ -30,6 +31,8 @@ interface VehicleEntryResponse {
     slotNumber: string;
     entryTime: Date;
     billingType: 'HOURLY' | 'DAY_PASS';
+    userId?: string | null;
+    ownerEmail?: string | null;
   };
 }
 
@@ -73,6 +76,12 @@ interface VehicleExitResponse {
     duration: string;
     billingAmount: number;
     billingType: 'HOURLY' | 'DAY_PASS';
+    originalBillingAmount?: number;
+    discountAmount?: number;
+    discountPercent?: number;
+    hasSubscriptionDiscount?: boolean;
+    userId?: string | null;
+    ownerEmail?: string | null;
   };
 }
 

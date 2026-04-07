@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+import api from './api-client';
 
 // Notification interfaces
 export interface Notification {
@@ -45,7 +43,7 @@ export const notificationsApi = {
     type?: 'overstay' | 'revenue' | 'system' | 'maintenance';
     limit?: number;
   }): Promise<NotificationsResponse> {
-    const response = await axios.get(`${API_BASE_URL}/notifications`, { params });
+    const response = await api.get('/notifications', { params });
     
     // Convert timestamp strings to Date objects
     const data = response.data.data;
@@ -59,19 +57,19 @@ export const notificationsApi = {
 
   // Get notification count
   async getNotificationCount(): Promise<NotificationCount> {
-    const response = await axios.get(`${API_BASE_URL}/notifications/count`);
+    const response = await api.get('/notifications/count');
     return response.data.data;
   },
 
   // Mark notification as read
   async markNotificationAsRead(notificationId: string): Promise<{ success: boolean; message: string }> {
-    const response = await axios.post(`${API_BASE_URL}/notifications/${notificationId}/mark-read`);
+    const response = await api.post(`/notifications/${notificationId}/mark-read`);
     return response.data;
   },
 
   // Mark all notifications as read
   async markAllNotificationsAsRead(): Promise<{ success: boolean; message: string }> {
-    const response = await axios.post(`${API_BASE_URL}/notifications/mark-all-read`);
+    const response = await api.post('/notifications/mark-all-read');
     return response.data;
   },
 
@@ -85,7 +83,7 @@ export const notificationsApi = {
       errors: string[];
     };
   }> {
-    const response = await axios.post(`${API_BASE_URL}/notifications/run-overstay-detection`);
+    const response = await api.post('/notifications/run-overstay-detection');
     return response.data;
   }
 };

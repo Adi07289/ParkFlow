@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import { AxiosError } from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { parkingApi } from '@/lib/parking-api';
-import { formatToISTDateTime, formatToISTTimeOnly } from '@/lib/time-utils';
+import { formatToISTDateTime } from '@/lib/time-utils';
 import { 
   Car, 
   Bike,
@@ -24,7 +25,6 @@ import {
   Accessibility,
   LogOut,
   AlertCircle,
-  CheckCircle,
   Loader2,
   Search,
   Clock,
@@ -33,13 +33,31 @@ import {
   RefreshCw,
   Filter,
   Users,
-  Calendar,
   X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface ExitResultData {
+  sessionId: string;
+  entryTime: string;
+  exitTime: string;
+  duration: string;
+  billingAmount: number;
+  billingType: 'HOURLY' | 'DAY_PASS';
+  originalBillingAmount?: number;
+  discountAmount?: number;
+  discountPercent?: number;
+  hasSubscriptionDiscount?: boolean;
+  userId?: string;
+  ownerEmail?: string | null;
+  numberPlate: string;
+  vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
+  slotNumber: string;
+  message: string;
+}
+
 interface VehicleExitFormProps {
-  onSuccess: (data: any) => void;
+  onSuccess: (data: ExitResultData) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   disabled?: boolean;
@@ -48,9 +66,14 @@ interface VehicleExitFormProps {
 interface ActiveSession {
   sessionId: string;
   vehicle: {
+    id: string;
     numberPlate: string;
     vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
   };
+  user?: {
+    id: string;
+    email: string;
+  } | null;
   slot: {
     number: string;
     type: string;
@@ -150,9 +173,13 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
         toast.error('No active parking session found for this vehicle');
         setActiveSession(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Search error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to search for vehicle';
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.message ||
+        'Failed to search for vehicle';
       toast.error(errorMessage);
       setActiveSession(null);
     } finally {
@@ -190,9 +217,13 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
       } else {
         toast.error(response.message || 'Failed to process vehicle exit');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Exit error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to process vehicle exit';
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.message ||
+        'Failed to process vehicle exit';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -217,17 +248,19 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
   };
 
   const calculateEstimatedBilling = (session: ActiveSession) => {
-    // Simple billing estimation (this should match backend logic)
     const entryTime = new Date(session.entryTime);
     const now = new Date();
     const durationMs = now.getTime() - entryTime.getTime();
     const hours = Math.ceil(durationMs / (1000 * 60 * 60)); // Round up to next hour
-    
+
     if (session.billingType === 'HOURLY') {
-      return hours * 10; // ₹10 per hour
-    } else {
-      return 50; // Day pass rate
+      if (hours <= 1) return 50;
+      if (hours <= 3) return 100;
+      if (hours <= 6) return 150;
+      return 200;
     }
+
+    return 150;
   };
 
   const formatParkingDuration = (entryTime: string) => {
@@ -412,6 +445,17 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
                       </div>
                     </div>
                   </div>
+
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 text-indigo-600 mr-2" />
+                    <div>
+                      <div className="text-sm text-gray-500">Session Owner</div>
+                      <div className="font-semibold">{activeSession.user?.email || 'Walk-in parking'}</div>
+                      <div className="text-sm text-gray-500">
+                        {activeSession.user ? 'Subscription and loyalty may apply at exit' : 'Standard pricing only'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -454,8 +498,8 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
             <h4 className="font-medium text-gray-800 mb-2">How to Process Exit:</h4>
             <ol className="text-sm text-gray-600 space-y-1">
               <li>1. Select a vehicle from the list below or search manually</li>
-              <li>2. Review the parking details and estimated billing</li>
-              <li>3. Click "Process Vehicle Exit" to complete the exit</li>
+              <li>2. Review the parking details and current billing estimate</li>
+              <li>3. Click Process Vehicle Exit to complete the exit</li>
               <li>4. Payment will be calculated and receipt generated</li>
             </ol>
           </div>
@@ -662,7 +706,7 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-orange-600">
-                  ${allSessions.reduce((total, session) => total + calculateEstimatedBilling(session), 0)}
+                  ₹{allSessions.reduce((total, session) => total + calculateEstimatedBilling(session), 0)}
                 </div>
                 <div className="text-sm text-gray-500">Est. Revenue</div>
               </div>

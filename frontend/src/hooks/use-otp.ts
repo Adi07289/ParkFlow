@@ -1,5 +1,6 @@
 "use client";
 
+import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { authApi, SendOTPResponse } from '@/lib/auth-api';
 import { toast } from 'sonner';
@@ -7,7 +8,6 @@ import { toast } from 'sonner';
 interface UseOTPReturn {
   sendingOTP: boolean;
   otpSent: boolean;
-  otp: string;
   cooldown: number;
   sendOTP: (email: string, type: 'register' | 'login') => Promise<void>;
   resetOTP: () => void;
@@ -16,7 +16,6 @@ interface UseOTPReturn {
 export function useOTP(): UseOTPReturn {
   const [sendingOTP, setSendingOTP] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
   const [cooldown, setCooldown] = useState(0);
 
   const sendOTP = async (email: string, type: 'register' | 'login') => {
@@ -36,7 +35,6 @@ export function useOTP(): UseOTPReturn {
       }
 
       if (response.success) {
-        setOtp(response.otp); // Store OTP for display
         setOtpSent(true);
         toast.success(response.message || 'OTP sent successfully!');
         
@@ -54,8 +52,9 @@ export function useOTP(): UseOTPReturn {
       } else {
         toast.error(response.message || 'Failed to send OTP');
       }
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to send OTP';
+    } catch (error: unknown) {
+      const message =
+        error instanceof AxiosError ? error.response?.data?.message || 'Failed to send OTP' : 'Failed to send OTP';
       toast.error(message);
     } finally {
       setSendingOTP(false);
@@ -64,14 +63,12 @@ export function useOTP(): UseOTPReturn {
 
   const resetOTP = () => {
     setOtpSent(false);
-    setOtp('');
     setCooldown(0);
   };
 
   return {
     sendingOTP,
     otpSent,
-    otp,
     cooldown,
     sendOTP,
     resetOTP,

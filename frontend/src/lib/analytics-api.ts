@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+import api from './api-client';
 
 // Analytics API interfaces
 export interface RevenueAnalytics {
@@ -87,13 +85,13 @@ export const analyticsApi = {
     startDate?: string;
     endDate?: string;
   }): Promise<RevenueAnalytics[]> {
-    const response = await axios.get(`${API_BASE_URL}/analytics/revenue`, { params });
+    const response = await api.get('/analytics/revenue', { params });
     return response.data.data;
   },
 
   // Slot Utilization Analytics
   async getSlotUtilizationAnalytics(period: 'day' | 'week' | 'month' = 'day'): Promise<SlotUtilizationAnalytics[]> {
-    const response = await axios.get(`${API_BASE_URL}/analytics/utilization`, { 
+    const response = await api.get('/analytics/utilization', {
       params: { period } 
     });
     return response.data.data;
@@ -101,7 +99,7 @@ export const analyticsApi = {
 
   // Peak Hours Analytics
   async getPeakHoursAnalytics(period: 'day' | 'week' | 'month' = 'day'): Promise<PeakHourAnalytics[]> {
-    const response = await axios.get(`${API_BASE_URL}/analytics/peak-hours`, { 
+    const response = await api.get('/analytics/peak-hours', {
       params: { period } 
     });
     return response.data.data;
@@ -109,7 +107,7 @@ export const analyticsApi = {
 
   // Vehicle Types Analytics
   async getVehicleTypeAnalytics(period: 'day' | 'week' | 'month' = 'day'): Promise<VehicleTypeAnalytics[]> {
-    const response = await axios.get(`${API_BASE_URL}/analytics/vehicle-types`, { 
+    const response = await api.get('/analytics/vehicle-types', {
       params: { period } 
     });
     return response.data.data;
@@ -117,7 +115,7 @@ export const analyticsApi = {
 
   // Operational Metrics
   async getOperationalMetrics(period: 'day' | 'week' | 'month' = 'day'): Promise<OperationalMetrics> {
-    const response = await axios.get(`${API_BASE_URL}/analytics/operational-metrics`, { 
+    const response = await api.get('/analytics/operational-metrics', {
       params: { period } 
     });
     return response.data.data;
@@ -125,13 +123,13 @@ export const analyticsApi = {
 
   // Overstay Alerts
   async getOverstayAlerts(): Promise<OverstayAlert[]> {
-    const response = await axios.get(`${API_BASE_URL}/analytics/overstay-alerts`);
+    const response = await api.get('/analytics/overstay-alerts');
     return response.data.data;
   },
 
   // Overstay Statistics
   async getOverstayStats(periodDays: number = 7): Promise<OverstayStats> {
-    const response = await axios.get(`${API_BASE_URL}/analytics/overstay-stats`, { 
+    const response = await api.get('/analytics/overstay-stats', {
       params: { periodDays } 
     });
     return response.data.data;
@@ -148,7 +146,7 @@ export const analyticsApi = {
     overstayStats: OverstayStats;
     generatedAt: string;
   }> {
-    const response = await axios.get(`${API_BASE_URL}/analytics/dashboard`, { 
+    const response = await api.get('/analytics/dashboard', {
       params: { period } 
     });
     return response.data.data;
