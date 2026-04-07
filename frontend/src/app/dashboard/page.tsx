@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -17,7 +16,6 @@ import { formatToISTTimeOnly } from '@/lib/time-utils';
 import { 
   BarChart3, 
   IndianRupee, 
-  TrendingUp, 
   Activity, 
   Car, 
   Bike, 
@@ -27,13 +25,10 @@ import {
   Clock,
   MapPin,
   AlertTriangle,
-  CheckCircle,
-  Settings
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { loading, isAuthenticated } = useAuth();
-  const router = useRouter();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null);
   const [activityStats, setActivityStats] = useState<ActivityStats | null>(null);
@@ -42,34 +37,23 @@ export default function DashboardPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedView, setSelectedView] = useState<'overview' | 'search' | 'sessions' | 'past' | 'billing'>('overview');
 
-  // Auth check removed - open access mode
-  // useEffect(() => {
-  //   if (!loading && !isAuthenticated) {
-  //     router.replace('/auth/login');
-  //   }
-  // }, [loading, isAuthenticated, router]);
-
   useEffect(() => {
-    // Always fetch data in open access mode
+    if (loading || !isAuthenticated) {
+      return;
+    }
+
     fetchDashboardData();
-    // Auto-refresh disabled
-    // const interval = setInterval(fetchDashboardData, 30000);
-    // return () => clearInterval(interval);
-  }, []);
+  }, [loading, isAuthenticated]);
 
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
-      console.log('Fetching dashboard data...');
-      
       const [stats, revenue, activity] = await Promise.all([
         dashboardApi.getStats(),
         dashboardApi.getRevenue(),
         dashboardApi.getActivity(),
       ]);
-      
-      console.log('Dashboard data fetched successfully:', { stats, revenue, activity });
-      
+
       setDashboardStats(stats);
       setRevenueStats(revenue);
       setActivityStats(activity);
@@ -102,7 +86,6 @@ export default function DashboardPage() {
       });
     } finally {
       setIsLoading(false);
-      console.log('Dashboard loading complete');
     }
   };
 
@@ -136,7 +119,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading) {
+  if (loading || (isLoading && isAuthenticated)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

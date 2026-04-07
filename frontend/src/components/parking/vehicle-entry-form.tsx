@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { AxiosError } from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SlotSelector, SlotSelectorRef } from './slot-selector';
 import { parkingApi } from '@/lib/parking-api';
+import { userApi, UserResponse } from '@/lib/user-api';
 import { 
   Car, 
   Bike, 
@@ -18,12 +20,29 @@ import {
   ToggleRight,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  UserCircle,
+  Search
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+type EntryVehicleType = 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
+type EntryBillingType = 'HOURLY' | 'DAY_PASS';
+
+interface AssignmentResultData {
+  sessionId: string;
+  vehicleId: string;
+  slotId: string;
+  slotNumber: string;
+  entryTime: string;
+  billingType: EntryBillingType;
+  userId?: string;
+  ownerEmail?: string | null;
+  message: string;
+}
+
 interface VehicleEntryFormProps {
-  onSuccess: (data: any) => void;
+  onSuccess: (data: AssignmentResultData) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   disabled?: boolean;
@@ -33,13 +52,16 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
   const slotSelectorRef = useRef<SlotSelectorRef>(null);
   const [formData, setFormData] = useState({
     numberPlate: '',
-    vehicleType: '' as 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE' | '',
-    billingType: 'HOURLY' as 'HOURLY' | 'DAY_PASS',
-    slotId: ''
+    vehicleType: '' as EntryVehicleType | '',
+    billingType: 'HOURLY' as EntryBillingType,
+    slotId: '',
+    userId: ''
   });
   
   const [assignmentMode, setAssignmentMode] = useState<'auto' | 'manual'>('auto');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [users, setUsers] = useState<UserResponse[]>([]);
+  const [ownerQuery, setOwnerQuery] = useState('');
 
   const vehicleTypes = [
     { value: 'CAR', label: 'Car', icon: Car, color: 'bg-blue-500' },
@@ -52,6 +74,19 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
     { value: 'HOURLY', label: 'Hourly Billing', description: 'Pay per hour parked' },
     { value: 'DAY_PASS', label: 'Day Pass', description: 'Fixed rate for the day' }
   ];
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const allUsers = await userApi.getAllUsers();
+        setUsers(allUsers);
+      } catch (error) {
+        console.error('Failed to load users for parking entry:', error);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -89,6 +124,7 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
         numberPlate: formData.numberPlate.trim().toUpperCase(),
         vehicleType: formData.vehicleType,
         billingType: formData.billingType,
+        ...(formData.userId ? { userId: formData.userId } : {}),
         ...(assignmentMode === 'manual' && formData.slotId ? { slotId: formData.slotId } : {})
       };
 
@@ -110,9 +146,11 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
           numberPlate: '',
           vehicleType: '',
           billingType: 'HOURLY',
-          slotId: ''
+          slotId: '',
+          userId: ''
         });
         setAssignmentMode('auto');
+        setOwnerQuery('');
         
         // Refresh slot availability since a slot was just assigned
         if (slotSelectorRef.current) {
@@ -121,9 +159,13 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
       } else {
         toast.error(response.message || 'Failed to register vehicle entry');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to register vehicle entry';
+      const axiosError = error as AxiosError<{ message?: string }>;
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.message ||
+        'Failed to register vehicle entry';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -135,16 +177,25 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
       numberPlate: '',
       vehicleType: '',
       billingType: 'HOURLY',
-      slotId: ''
+      slotId: '',
+      userId: ''
     });
     setAssignmentMode('auto');
     setErrors({});
+    setOwnerQuery('');
   };
 
-  const getVehicleTypeIcon = (type: string) => {
-    const vehicleType = vehicleTypes.find(vt => vt.value === type);
-    return vehicleType ? vehicleType.icon : Car;
-  };
+  const filteredUsers = users.filter((user) => {
+    const query = ownerQuery.trim().toLowerCase();
+
+    if (!query) {
+      return true;
+    }
+
+    return user.email.toLowerCase().includes(query) || user.id.toLowerCase().includes(query);
+  }).slice(0, 6);
+
+  const selectedOwner = users.find((user) => user.id === formData.userId);
 
   return (
     <Card className={`${disabled ? 'opacity-50' : ''}`}>
@@ -185,7 +236,7 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
             <Label htmlFor="vehicleType">Vehicle Type *</Label>
             <Select
               value={formData.vehicleType}
-              onValueChange={(value) => setFormData({ ...formData, vehicleType: value as any })}
+              onValueChange={(value: EntryVehicleType) => setFormData({ ...formData, vehicleType: value })}
               disabled={disabled || isLoading}
             >
               <SelectTrigger className={errors.vehicleType ? 'border-red-500' : ''}>
@@ -225,13 +276,90 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   } ${disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  onClick={() => !disabled && !isLoading && setFormData({ ...formData, billingType: billing.value as any })}
+                  onClick={() =>
+                    !disabled &&
+                    !isLoading &&
+                    setFormData({ ...formData, billingType: billing.value as EntryBillingType })
+                  }
                 >
                   <div className="font-medium text-sm">{billing.label}</div>
                   <div className="text-xs text-gray-500">{billing.description}</div>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Optional Owner Selection */}
+          <div className="space-y-3">
+            <Label className="flex items-center">
+              <UserCircle className="h-4 w-4 mr-2 text-blue-600" />
+              Link Session To ParkFlow User
+            </Label>
+            <p className="text-sm text-gray-500">
+              Optional. Leave this blank for walk-in parking, or select a user to enable subscriptions, loyalty, and swap ownership.
+            </p>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search by user email or ID"
+                value={ownerQuery}
+                onChange={(e) => setOwnerQuery(e.target.value)}
+                disabled={disabled || isLoading}
+                className="pl-10"
+              />
+            </div>
+
+            {selectedOwner ? (
+              <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-3">
+                <div>
+                  <div className="font-medium text-blue-900">{selectedOwner.email}</div>
+                  <div className="font-mono text-xs text-blue-700">{selectedOwner.id}</div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({ ...formData, userId: '' })}
+                  disabled={disabled || isLoading}
+                >
+                  Use Walk-In
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setFormData({ ...formData, userId: '' })}
+                disabled={disabled || isLoading}
+              >
+                Keep As Walk-In Session
+              </Button>
+            )}
+
+            {filteredUsers.length > 0 && (
+              <div className="space-y-2 rounded-lg border bg-white p-3">
+                <p className="text-sm font-medium text-gray-700">Available users</p>
+                {filteredUsers.map((user) => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, userId: user.id })}
+                    disabled={disabled || isLoading}
+                    className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                      formData.userId === user.id
+                        ? 'border-blue-400 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/40'
+                    }`}
+                  >
+                    <div className="font-medium text-gray-900">{user.email}</div>
+                    <div className="font-mono text-xs text-gray-500">{user.id}</div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Assignment Mode Toggle */}

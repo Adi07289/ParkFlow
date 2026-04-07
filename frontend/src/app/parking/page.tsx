@@ -15,6 +15,8 @@ interface AssignmentData {
   slotNumber: string;
   entryTime: string;
   billingType: 'HOURLY' | 'DAY_PASS';
+  userId?: string;
+  ownerEmail?: string | null;
   message: string;
 }
 
@@ -25,6 +27,12 @@ interface ExitData {
   duration: string;
   billingAmount: number;
   billingType: 'HOURLY' | 'DAY_PASS';
+  originalBillingAmount?: number;
+  discountAmount?: number;
+  discountPercent?: number;
+  hasSubscriptionDiscount?: boolean;
+  userId?: string;
+  ownerEmail?: string | null;
   numberPlate: string;
   vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
   slotNumber: string;

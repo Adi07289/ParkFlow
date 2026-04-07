@@ -24,6 +24,11 @@ interface ExitData {
   duration: string;
   billingAmount: number;
   billingType: 'HOURLY' | 'DAY_PASS';
+  originalBillingAmount?: number;
+  discountAmount?: number;
+  discountPercent?: number;
+  hasSubscriptionDiscount?: boolean;
+  ownerEmail?: string | null;
   numberPlate: string;
   vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
   slotNumber: string;
@@ -36,18 +41,6 @@ interface ExitResultProps {
 }
 
 export function ExitResult({ result, onNewExit }: ExitResultProps) {
-  const getVehicleIcon = (vehicleType?: string) => {
-    switch (vehicleType) {
-      case 'CAR':
-      case 'BIKE':
-      case 'EV':
-      case 'HANDICAP_ACCESSIBLE':
-        return Car;
-      default:
-        return Car;
-    }
-  };
-
   const getBillingTypeBadge = (billingType: string) => {
     return (
       <Badge variant={billingType === 'HOURLY' ? 'default' : 'secondary'}>
@@ -60,29 +53,11 @@ export function ExitResult({ result, onNewExit }: ExitResultProps) {
     return formatToISTDateTime(dateTime);
   };
 
-  const calculateSavings = () => {
-    if (!result) return null;
-    
-    // Simple savings calculation (this could be enhanced)
-    const hourlyRate = 10; // Assuming ₹10/hour
-    const dayPassRate = 50; // Assuming ₹50/day
-    
-    if (result.billingType === 'HOURLY') {
-      const dayPassCost = dayPassRate;
-      const actualCost = result.billingAmount;
-      const savings = dayPassCost - actualCost;
-      return savings > 0 ? savings : 0;
-    }
-    
-    return 0;
-  };
-
   const handlePrintReceipt = () => {
     if (!result) return;
     
     const entryDateTime = formatDateTime(result.entryTime);
     const exitDateTime = formatDateTime(result.exitTime);
-    const savings = calculateSavings();
     
     const receiptContent = `
       PARKING EXIT RECEIPT
@@ -100,7 +75,6 @@ export function ExitResult({ result, onNewExit }: ExitResultProps) {
       BILLING:
       Type: ${result.billingType}
       Amount: ₹${result.billingAmount}
-      ${savings > 0 ? `Savings vs Day Pass: ₹${savings}` : ''}
       
       STATUS: PAYMENT COMPLETED
       
@@ -109,9 +83,9 @@ export function ExitResult({ result, onNewExit }: ExitResultProps) {
       
       Questions? Contact support.
     `;
-    
-    // For demo purposes, show alert. In production, implement proper printing
-    alert('Printing receipt...\n\n' + receiptContent);
+
+    console.info(receiptContent);
+    window.print();
   };
 
   if (!result) {
@@ -132,8 +106,6 @@ export function ExitResult({ result, onNewExit }: ExitResultProps) {
 
   const entryDateTime = formatDateTime(result.entryTime);
   const exitDateTime = formatDateTime(result.exitTime);
-  const savings = calculateSavings();
-
   return (
     <Card className="border-green-200 bg-green-50">
       <CardHeader className="pb-4">
@@ -233,11 +205,25 @@ export function ExitResult({ result, onNewExit }: ExitResultProps) {
               <span className="text-gray-600">Parking Duration:</span>
               <span className="font-medium">{result.duration}</span>
             </div>
-            
-            {savings > 0 && (
+
+            {result.ownerEmail && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Session Owner:</span>
+                <span className="font-medium">{result.ownerEmail}</span>
+              </div>
+            )}
+
+            {result.hasSubscriptionDiscount && typeof result.originalBillingAmount === 'number' && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Base Amount:</span>
+                <span className="font-medium">₹{result.originalBillingAmount}</span>
+              </div>
+            )}
+
+            {result.hasSubscriptionDiscount && typeof result.discountAmount === 'number' && (
               <div className="flex justify-between items-center text-green-600">
-                <span>Savings vs Day Pass:</span>
-                <span className="font-medium">₹{savings}</span>
+                <span>Subscription Discount{result.discountPercent ? ` (${result.discountPercent}%)` : ''}:</span>
+                <span className="font-medium">-₹{result.discountAmount}</span>
               </div>
             )}
             
@@ -307,7 +293,8 @@ export function ExitResult({ result, onNewExit }: ExitResultProps) {
             <div>• Vehicle {result.numberPlate} exited successfully</div>
             <div>• Slot #{result.slotNumber} is now available</div>
             <div>• Payment of ₹{result.billingAmount} processed</div>
-            <div>• Receipt available for printing</div>
+            {result.hasSubscriptionDiscount && <div>• Subscription pricing was applied to this owned session</div>}
+            <div>• Use the print action for a browser-generated receipt</div>
           </div>
         </div>
       </CardContent>

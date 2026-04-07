@@ -9,6 +9,7 @@ import {
   Query,
   Path
 } from 'tsoa';
+import { createClient } from 'redis';
 import { overstayService } from '../services/overstayService';
 
 interface NotificationResponse {
@@ -33,9 +34,43 @@ interface MockNotification {
   };
 }
 
+const redis = createClient({
+  url: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+redis.connect().catch(console.error);
+
 @Route('api/notifications')
 @Tags('Notifications')
 export class NotificationController extends Controller {
+  private readonly READ_NOTIFICATIONS_KEY = 'notifications:read';
+
+  private buildOverstayNotificationId(sessionId: string): string {
+    return `overstay-${sessionId}`;
+  }
+
+  private async getReadNotificationIds(): Promise<Set<string>> {
+    try {
+      const ids = await redis.sMembers(this.READ_NOTIFICATIONS_KEY);
+      return new Set(ids);
+    } catch (error) {
+      console.error('Failed to load read notification IDs:', error);
+      return new Set();
+    }
+  }
+
+  private async markNotificationIdsAsRead(notificationIds: string[]): Promise<void> {
+    if (notificationIds.length === 0) {
+      return;
+    }
+
+    try {
+      await redis.sAdd(this.READ_NOTIFICATIONS_KEY, notificationIds);
+    } catch (error) {
+      console.error('Failed to persist read notifications:', error);
+      throw error;
+    }
+  }
 
   /**
    * Get all notifications
@@ -51,15 +86,16 @@ export class NotificationController extends Controller {
     try {
       // Get overstay alerts
       const overstayAlerts = await overstayService.getOverstayAlerts();
+      const readNotificationIds = await this.getReadNotificationIds();
       
       // Convert overstay alerts to notifications (ONLY REAL DATA)
       const overstayNotifications: MockNotification[] = overstayAlerts.map(alert => ({
-        id: `overstay-${alert.sessionId}`,
+        id: this.buildOverstayNotificationId(alert.sessionId),
         type: 'overstay' as const,
         title: `Vehicle Overstay ${alert.severity === 'critical' ? 'Critical' : 'Alert'}`,
         message: `Vehicle ${alert.vehicle.numberPlate} has been parked for ${alert.duration} in slot ${alert.slot.slotNumber}`,
         timestamp: new Date(Date.now() - (alert.overstayHours * 60 * 60 * 1000)), // When overstay started
-        read: false,
+        read: readNotificationIds.has(this.buildOverstayNotificationId(alert.sessionId)),
         priority: alert.severity === 'critical' ? 'critical' : alert.severity === 'alert' ? 'high' : 'medium',
         metadata: {
           vehicleNumber: alert.vehicle.numberPlate,
@@ -112,17 +148,27 @@ export class NotificationController extends Controller {
   public async getNotificationCount(): Promise<NotificationResponse> {
     try {
       const overstayAlerts = await overstayService.getOverstayAlerts();
+      const readNotificationIds = await this.getReadNotificationIds();
+      const unreadOverstayCount = overstayAlerts.filter(
+        (alert) => !readNotificationIds.has(this.buildOverstayNotificationId(alert.sessionId))
+      ).length;
       
       return {
         success: true,
         data: {
-          total: overstayAlerts.length,
-          overstay: overstayAlerts.length,
+          total: unreadOverstayCount,
+          overstay: unreadOverstayCount,
           other: 0,
           bySeverity: {
-            critical: overstayAlerts.filter(a => a.severity === 'critical').length,
-            high: overstayAlerts.filter(a => a.severity === 'alert').length,
-            medium: overstayAlerts.filter(a => a.severity === 'warning').length,
+            critical: overstayAlerts.filter(
+              (alert) => alert.severity === 'critical' && !readNotificationIds.has(this.buildOverstayNotificationId(alert.sessionId))
+            ).length,
+            high: overstayAlerts.filter(
+              (alert) => alert.severity === 'alert' && !readNotificationIds.has(this.buildOverstayNotificationId(alert.sessionId))
+            ).length,
+            medium: overstayAlerts.filter(
+              (alert) => alert.severity === 'warning' && !readNotificationIds.has(this.buildOverstayNotificationId(alert.sessionId))
+            ).length,
             low: 0
           }
         }
@@ -147,8 +193,7 @@ export class NotificationController extends Controller {
     @Path() notificationId: string
   ): Promise<NotificationResponse> {
     try {
-      // In a real implementation, this would update the database
-      // For now, we'll just return success
+      await this.markNotificationIdsAsRead([notificationId]);
       
       return {
         success: true,
@@ -171,8 +216,10 @@ export class NotificationController extends Controller {
   @SuccessResponse(200, 'All notifications marked as read')
   public async markAllNotificationsAsRead(): Promise<NotificationResponse> {
     try {
-      // In a real implementation, this would update the database
-      // For now, we'll just return success
+      const overstayAlerts = await overstayService.getOverstayAlerts();
+      await this.markNotificationIdsAsRead(
+        overstayAlerts.map((alert) => this.buildOverstayNotificationId(alert.sessionId))
+      );
       
       return {
         success: true,

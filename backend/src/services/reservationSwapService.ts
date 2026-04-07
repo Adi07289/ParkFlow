@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ReservationSwapStatus, SessionStatus, SlotStatus } from '@prisma/client';
+import { billingService } from './billingService';
+import { subscriptionService } from './subscriptionService';
 
 const prisma = new PrismaClient();
 
@@ -21,11 +23,19 @@ class ReservationSwapService {
           id: sessionId,
           status: SessionStatus.ACTIVE
         },
-        include: { vehicle: true, slot: true }
+        include: { vehicle: true, slot: true, user: true }
       });
 
       if (!session) {
         return { success: false, message: 'Active session not found' };
+      }
+
+      if (!session.userId) {
+        return { success: false, message: 'Only user-owned sessions can be listed for swap' };
+      }
+
+      if (session.userId !== userId) {
+        return { success: false, message: 'You can only list sessions you own' };
       }
 
       // Check if already listed
@@ -40,7 +50,22 @@ class ReservationSwapService {
         return { success: false, message: 'This reservation is already listed for swap' };
       }
 
-      const originalPrice = session.billingAmount ? Number(session.billingAmount) : 0;
+      if (listingPrice <= 0) {
+        return { success: false, message: 'Listing price must be greater than zero' };
+      }
+
+      const estimatedBilling = billingService.calculateBillingAmount(
+        session.entryTime,
+        new Date(),
+        session.billingType
+      );
+      const discountResult = await subscriptionService.applyDiscount(userId, estimatedBilling.amount);
+      const originalPrice = session.billingAmount ? Number(session.billingAmount) : discountResult.finalAmount;
+
+      if (listingPrice > originalPrice) {
+        return { success: false, message: 'Listing price cannot exceed the current session value' };
+      }
+
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + this.DEFAULT_LISTING_EXPIRY_HOURS);
 
@@ -66,7 +91,8 @@ class ReservationSwapService {
           originalPrice,
           listingPrice,
           expiresAt,
-          currency: '₹'
+          currency: '₹',
+          ownerEmail: session.user?.email || null
         }
       };
     } catch (error) {
@@ -84,10 +110,16 @@ class ReservationSwapService {
       await this.expireOldListings();
 
       const swaps = await prisma.reservationSwap.findMany({
-        where: { status: ReservationSwapStatus.LISTED },
+        where: {
+          status: ReservationSwapStatus.LISTED,
+          session: {
+            status: SessionStatus.ACTIVE,
+            userId: { not: null }
+          }
+        },
         include: {
           session: {
-            include: { vehicle: true, slot: true }
+            include: { vehicle: true, slot: true, user: true }
           },
           slot: true
         },
@@ -104,7 +136,10 @@ class ReservationSwapService {
         listedAt: swap.listedAt,
         expiresAt: swap.expiresAt,
         savings: Number(swap.originalPrice) - Number(swap.listingPrice),
-        currency: '₹'
+        currency: '₹',
+        originalUserId: swap.originalUserId,
+        ownerEmail: swap.session.user?.email || null,
+        sessionId: swap.sessionId
       }));
     } catch (error) {
       console.error('Error getting available swaps:', error);
@@ -126,7 +161,7 @@ class ReservationSwapService {
           status: ReservationSwapStatus.LISTED
         },
         include: {
-          session: { include: { slot: true } },
+          session: { include: { slot: true, user: true, vehicle: true } },
           slot: true
         }
       });
@@ -139,6 +174,10 @@ class ReservationSwapService {
         return { success: false, message: 'You cannot claim your own listing' };
       }
 
+      if (!swap.session.userId || swap.session.userId !== swap.originalUserId) {
+        return { success: false, message: 'This listing is no longer backed by an owned active session' };
+      }
+
       if (new Date() > swap.expiresAt) {
         await prisma.reservationSwap.update({
           where: { id: swapId },
@@ -147,13 +186,22 @@ class ReservationSwapService {
         return { success: false, message: 'This listing has expired' };
       }
 
-      await prisma.reservationSwap.update({
-        where: { id: swapId },
-        data: {
-          status: ReservationSwapStatus.CLAIMED,
-          claimedByUserId: userId,
-          claimedAt: new Date()
-        }
+      const claimedAt = new Date();
+
+      await prisma.$transaction(async (tx) => {
+        await tx.parkingSession.update({
+          where: { id: swap.sessionId },
+          data: { userId }
+        });
+
+        await tx.reservationSwap.update({
+          where: { id: swapId },
+          data: {
+            status: ReservationSwapStatus.CLAIMED,
+            claimedByUserId: userId,
+            claimedAt
+          }
+        });
       });
 
       return {
@@ -164,8 +212,10 @@ class ReservationSwapService {
           slotNumber: swap.slot.slotNumber,
           listingPrice: Number(swap.listingPrice),
           originalPrice: Number(swap.originalPrice),
-          claimedAt: new Date(),
-          currency: '₹'
+          claimedAt,
+          currency: '₹',
+          vehicleNumberPlate: swap.session.vehicle.numberPlate,
+          newOwnerUserId: userId
         }
       };
     } catch (error) {
@@ -235,7 +285,7 @@ class ReservationSwapService {
           ]
         },
         include: {
-          session: { include: { vehicle: true } },
+          session: { include: { vehicle: true, user: true } },
           slot: true
         },
         orderBy: { createdAt: 'desc' }

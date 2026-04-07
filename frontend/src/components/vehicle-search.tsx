@@ -1,5 +1,6 @@
 "use client";
 
+import { AxiosError } from 'axios';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,7 @@ export function VehicleSearch({ onVehicleFound }: VehicleSearchProps) {
           const results = await parkingApi.quickSearch(searchTerm);
           setQuickResults(results);
           setShowQuickResults(true);
-        } catch (error) {
+        } catch {
           setQuickResults([]);
         }
       } else {
@@ -56,10 +57,10 @@ export function VehicleSearch({ onVehicleFound }: VehicleSearchProps) {
       setSearchResult(result);
       onVehicleFound?.(result);
       toast.success('Vehicle found');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Search failed:', error);
       setSearchResult(null);
-      if (error.response?.status === 404) {
+      if (error instanceof AxiosError && error.response?.status === 404) {
         toast.error('Vehicle not found');
       } else {
         toast.error('Search failed. Please try again.');
@@ -171,7 +172,9 @@ export function VehicleSearch({ onVehicleFound }: VehicleSearchProps) {
                         </div>
                         <div className="flex items-center space-x-2">
                           {getVehicleTypeBadge(result.vehicleType)}
-                          <Badge variant="outline">{result.slotNumber}</Badge>
+                          <Badge variant="outline">
+                            {result.isCurrentlyParked ? result.currentSlot || 'Parked' : 'Not parked'}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -269,7 +272,7 @@ export function VehicleSearch({ onVehicleFound }: VehicleSearchProps) {
                         </div>
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                           <span>{history.duration}</span>
-                          <span>${history.billingAmount}</span>
+                          <span>₹{history.billingAmount}</span>
                           <span>{formatToISTDateTime(history.entryTime).date}</span>
                         </div>
                       </div>

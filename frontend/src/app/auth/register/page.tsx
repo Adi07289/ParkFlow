@@ -6,11 +6,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { OTPInput } from '@/components/ui/otp-input';
 import { useAuth } from '@/contexts/auth-context';
 import { useOTP } from '@/hooks/use-otp';
-import { Eye, Mail, RefreshCw } from 'lucide-react';
+import { Mail, RefreshCw } from 'lucide-react';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -18,8 +17,8 @@ export default function RegisterPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [emailError, setEmailError] = useState('');
   
-  const { register, loading } = useAuth();
-  const { sendingOTP, otpSent, otp, cooldown, sendOTP, resetOTP } = useOTP();
+  const { register } = useAuth();
+  const { sendingOTP, otpSent, cooldown, sendOTP, resetOTP } = useOTP();
   const router = useRouter();
 
   const validateEmail = (email: string) => {
@@ -157,19 +156,6 @@ export default function RegisterPage() {
             ) : (
               // OTP verification step
               <div className="space-y-6">
-                {/* Display generated OTP for testing */}
-                {otp && (
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <Eye className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>Your OTP:</strong>{' '}
-                      <code className="font-mono text-lg bg-white px-2 py-1 rounded ml-2">
-                        {otp}
-                      </code>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 <div className="space-y-4">
                   <OTPInput
                     length={6}

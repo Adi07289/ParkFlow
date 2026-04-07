@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+import api from './api-client';
 
 // Parking API interfaces
 export interface Vehicle {
@@ -15,6 +13,10 @@ export interface CurrentSession {
   billingType: 'HOURLY' | 'DAY_PASS';
   entryTime: string;
   slotNumber: string;
+  user?: {
+    id: string;
+    email: string;
+  } | null;
 }
 
 export interface ParkingHistory {
@@ -35,9 +37,14 @@ export interface VehicleSearchResponse {
 export interface CurrentlyParkedVehicle {
   sessionId: string;
   vehicle: {
+    id: string;
     numberPlate: string;
     vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
   };
+  user?: {
+    id: string;
+    email: string;
+  } | null;
   slot: {
     number: string;
     type: string;
@@ -61,9 +68,8 @@ export interface QuickSearchResult {
   vehicleId: string;
   numberPlate: string;
   vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
-  slotNumber: string;
-  entryTime: string;
-  status: string;
+  isCurrentlyParked: boolean;
+  currentSlot?: string;
 }
 
 export interface SlotOverrideRequest {
@@ -95,7 +101,7 @@ export interface SlotOverrideResponse {
 export const parkingApi = {
   // Search for a specific vehicle by number plate
   async searchVehicle(numberPlate: string): Promise<VehicleSearchResponse> {
-    const response = await axios.get(`${API_BASE_URL}/parking/search/${numberPlate}`);
+    const response = await api.get(`/parking/search/${numberPlate}`);
     return response.data.data;
   },
 
@@ -105,7 +111,7 @@ export const parkingApi = {
     page?: number;
     limit?: number;
   }): Promise<CurrentParkedResponse> {
-    const response = await axios.get(`${API_BASE_URL}/parking/current`, { params });
+    const response = await api.get('/parking/current', { params });
     return {
       vehicles: response.data.data || [],
       pagination: response.data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 }
@@ -114,10 +120,25 @@ export const parkingApi = {
 
   // Quick search for vehicles (autocomplete)
   async quickSearch(query: string): Promise<QuickSearchResult[]> {
-    const response = await axios.get(`${API_BASE_URL}/parking/quick-search`, {
+    const response = await api.get('/parking/quick-search', {
       params: { query }
     });
-    return response.data.data || [];
+    const results = response.data.data || [];
+
+    return results.map((result: {
+      id?: string;
+      vehicleId?: string;
+      numberPlate: string;
+      vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
+      isCurrentlyParked?: boolean;
+      currentSlot?: string;
+    }) => ({
+      vehicleId: result.vehicleId || result.id || '',
+      numberPlate: result.numberPlate,
+      vehicleType: result.vehicleType,
+      isCurrentlyParked: Boolean(result.isCurrentlyParked),
+      currentSlot: result.currentSlot,
+    })).filter((result: QuickSearchResult) => result.vehicleId);
   },
 
   // Get parking history
@@ -136,7 +157,7 @@ export const parkingApi = {
       totalPages: number;
     };
   }> {
-    const response = await axios.get(`${API_BASE_URL}/parking/history`, { params });
+    const response = await api.get('/parking/history', { params });
     return {
       data: response.data.data || [],
       pagination: response.data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 }
@@ -149,20 +170,21 @@ export const parkingApi = {
     vehicleType: 'CAR' | 'BIKE' | 'EV' | 'HANDICAP_ACCESSIBLE';
     billingType: 'HOURLY' | 'DAY_PASS';
     slotId?: string;
+    userId?: string;
   }): Promise<any> {
-    const response = await axios.post(`${API_BASE_URL}/parking/entry`, data);
+    const response = await api.post('/parking/entry', data);
     return response.data; // Return the full response including success field
   },
 
   // Register vehicle exit
   async registerVehicleExit(numberPlate: string): Promise<any> {
-    const response = await axios.post(`${API_BASE_URL}/parking/exit`, { numberPlate });
+    const response = await api.post('/parking/exit', { numberPlate });
     return response.data; // Return the full response including success field
   },
 
   // Override parking slot for active session
   async overrideSlot(sessionId: string, newSlotId: string): Promise<SlotOverrideResponse> {
-    const response = await axios.post(`${API_BASE_URL}/parking/${sessionId}/override-slot`, {
+    const response = await api.post(`/parking/${sessionId}/override-slot`, {
       newSlotId
     });
     return response.data;

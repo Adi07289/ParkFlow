@@ -130,6 +130,7 @@ model ParkingSession {
   id               String            @id @default(uuid())
   vehicleId        String
   slotId           String
+  userId           String?
   entryTime        DateTime          @default(now())
   exitTime         DateTime?         // Null until vehicle exits
   status           SessionStatus     @default(ACTIVE)
@@ -144,6 +145,7 @@ model ParkingSession {
   // Relationships
   vehicle          Vehicle           @relation(fields: [vehicleId], references: [id])
   slot             ParkingSlot       @relation(fields: [slotId], references: [id])
+  user             User?             @relation(fields: [userId], references: [id])
   alerts           ParkingAlert[]
   reservationSwaps ReservationSwap[]
   
@@ -175,6 +177,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   
   // Relationships
+  sessions      ParkingSession[]
   subscriptions Subscription[]
 
   @@map("users")

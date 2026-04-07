@@ -1,12 +1,15 @@
 "use client";
 
+import { AxiosError } from 'axios';
 import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navigation } from '@/components/navigation';
-import { swapApi, SwapListing } from '@/lib/swap-api';
+import { swapApi, SwapHistory, SwapListing } from '@/lib/swap-api';
+import { parkingApi, CurrentlyParkedVehicle } from '@/lib/parking-api';
+import { useAuth } from '@/contexts/auth-context';
 import {
   ArrowLeftRight,
   RefreshCw,
@@ -15,27 +18,58 @@ import {
   Clock,
   MapPin,
   ShoppingCart,
-  Check
+  Check,
+  UserCircle,
+  History,
+  Wallet
 } from 'lucide-react';
 
 export default function SwapsPage() {
+  const { user } = useAuth();
   const [swaps, setSwaps] = useState<SwapListing[]>([]);
+  const [mySessions, setMySessions] = useState<CurrentlyParkedVehicle[]>([]);
+  const [myHistory, setMyHistory] = useState<SwapHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [claimUserId, setClaimUserId] = useState('');
+  const [listingPrices, setListingPrices] = useState<Record<string, string>>({});
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const swapData = await swapApi.getAvailableSwaps();
+      const [swapData, currentSessions, history] = await Promise.all([
+        swapApi.getAvailableSwaps(),
+        parkingApi.getCurrentlyParkedVehicles({ limit: 100 }),
+        swapApi.getUserHistory(),
+      ]);
+
       setSwaps(swapData);
+
+      const ownedSessions = currentSessions.vehicles.filter(
+        (session) => session.user?.id === user?.id
+      );
+      setMySessions(ownedSessions);
+      setMyHistory(history);
+
+      setListingPrices((prev) => {
+        const next = { ...prev };
+
+        ownedSessions.forEach((session) => {
+          if (!next[session.sessionId]) {
+            next[session.sessionId] = '';
+          }
+        });
+
+        return next;
+      });
     } catch (error) {
       console.error('Failed to fetch swaps:', error);
       setSwaps([]);
+      setMySessions([]);
+      setMyHistory([]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchData();
@@ -47,16 +81,42 @@ export default function SwapsPage() {
   };
 
   const handleClaim = async (swapId: string) => {
-    if (!claimUserId.trim()) {
-      showMessage('error', 'Please enter your User ID to claim');
-      return;
-    }
     try {
-      const result = await swapApi.claimSwap(swapId, claimUserId.trim());
+      const result = await swapApi.claimSwap(swapId);
       showMessage(result.success ? 'success' : 'error', result.message);
       if (result.success) fetchData();
-    } catch (error: any) {
-      showMessage('error', error.response?.data?.message || 'Failed to claim');
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to claim'));
+    }
+  };
+
+  const handleListForSwap = async (sessionId: string) => {
+    const enteredPrice = Number(listingPrices[sessionId]);
+
+    if (!enteredPrice || enteredPrice <= 0) {
+      showMessage('error', 'Enter a valid listing price');
+      return;
+    }
+
+    try {
+      const result = await swapApi.listForSwap(sessionId, enteredPrice);
+      showMessage(result.success ? 'success' : 'error', result.message);
+      if (result.success) {
+        setListingPrices((prev) => ({ ...prev, [sessionId]: '' }));
+        fetchData();
+      }
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to create listing'));
+    }
+  };
+
+  const handleCancelListing = async (swapId: string) => {
+    try {
+      const result = await swapApi.cancelListing(swapId);
+      showMessage(result.success ? 'success' : 'error', result.message);
+      if (result.success) fetchData();
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to cancel listing'));
     }
   };
 
@@ -106,19 +166,21 @@ export default function SwapsPage() {
             </div>
           )}
 
-          {/* Claim User ID */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg">Your Identity</CardTitle>
-              <CardDescription>Enter your User ID to claim swap listings</CardDescription>
+              <CardTitle className="text-lg flex items-center">
+                <UserCircle className="h-5 w-5 mr-2 text-blue-600" />
+                Swap Identity
+              </CardTitle>
+              <CardDescription>
+                Claims and listings are now tied to your signed-in account instead of typed user IDs.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Input
-                placeholder="Your User ID"
-                value={claimUserId}
-                onChange={(e) => setClaimUserId(e.target.value)}
-                className="max-w-md"
-              />
+              <div className="rounded-lg border bg-blue-50 p-4">
+                <div className="font-medium text-blue-900">{user?.email || 'Signed-in user'}</div>
+                <div className="font-mono text-xs text-blue-700">{user?.id}</div>
+              </div>
             </CardContent>
           </Card>
 
@@ -157,14 +219,103 @@ export default function SwapsPage() {
             </Card>
           </div>
 
-          {/* Swap Listings */}
+          <div className="grid gap-6 lg:grid-cols-2 mb-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Wallet className="h-5 w-5 mr-2 text-purple-600" />
+                  Your Eligible Sessions
+                </CardTitle>
+                <CardDescription>Only sessions owned by your account can be listed for swap</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {mySessions.length === 0 ? (
+                  <div className="text-sm text-gray-500">No active owned sessions available for listing.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {mySessions.map((session) => (
+                      <div key={session.sessionId} className="rounded-lg border p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <div className="font-medium">{session.vehicle.numberPlate}</div>
+                            <div className="text-sm text-gray-500">
+                              Slot {session.slot.number} · {session.billingType}
+                            </div>
+                          </div>
+                          <Badge variant="outline">{session.user?.email || 'Owned session'}</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Listing price"
+                            value={listingPrices[session.sessionId] || ''}
+                            onChange={(e) =>
+                              setListingPrices((prev) => ({ ...prev, [session.sessionId]: e.target.value }))
+                            }
+                          />
+                          <Button onClick={() => handleListForSwap(session.sessionId)}>
+                            List
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <History className="h-5 w-5 mr-2 text-gray-700" />
+                  Your Swap Activity
+                </CardTitle>
+                <CardDescription>Current listings and claimed swaps for your account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {myHistory.length === 0 ? (
+                  <div className="text-sm text-gray-500">No swap activity yet.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {myHistory.map((swap) => (
+                      <div key={swap.id} className="rounded-lg border p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{swap.vehicleNumberPlate}</div>
+                            <div className="text-sm text-gray-500">Slot {swap.slotNumber}</div>
+                          </div>
+                          <Badge variant={swap.status === 'LISTED' ? 'secondary' : 'outline'}>
+                            {swap.role} · {swap.status}
+                          </Badge>
+                        </div>
+                        <div className="mt-2 text-sm text-gray-600">
+                          Listed at ₹{swap.listingPrice} against ₹{swap.originalPrice}
+                        </div>
+                        {swap.role === 'SELLER' && swap.status === 'LISTED' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => handleCancelListing(swap.id)}
+                          >
+                            Cancel Listing
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
               <CardTitle>Available Listings</CardTitle>
               <CardDescription>{swaps.length} reservations available for swap</CardDescription>
             </CardHeader>
             <CardContent>
-              {swaps.length === 0 ? (
+              {swaps.filter((swap) => swap.originalUserId !== user?.id).length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <ArrowLeftRight className="h-16 w-16 mx-auto mb-3 opacity-30" />
                   <p className="text-lg">No swap listings available</p>
@@ -172,7 +323,9 @@ export default function SwapsPage() {
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {swaps.map((swap) => (
+                  {swaps
+                    .filter((swap) => swap.originalUserId !== user?.id)
+                    .map((swap) => (
                     <div key={swap.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center">
@@ -193,10 +346,14 @@ export default function SwapsPage() {
                           </Badge>
                         )}
                       </div>
-
+                      
                       <div className="flex items-center text-xs text-gray-500 mb-3">
                         <Clock className="h-3 w-3 mr-1" />
                         Expires in {getTimeRemaining(swap.expiresAt)}
+                      </div>
+
+                      <div className="text-xs text-gray-500 mb-3">
+                        Owner: {swap.ownerEmail || 'Unknown'}
                       </div>
 
                       <Button
@@ -217,4 +374,12 @@ export default function SwapsPage() {
       </main>
     </div>
   );
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    return error.response?.data?.message || fallback;
+  }
+
+  return fallback;
 }

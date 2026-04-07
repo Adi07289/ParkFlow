@@ -5,7 +5,6 @@ export interface SendOTPRequest {
 export interface SendOTPResponse {
   success: boolean;
   message: string;
-  otp: string; // Always return OTP for frontend display (testing purposes)
 }
 
 export interface VerifyOTPRequest {

@@ -8,8 +8,9 @@ import { RegisterRoutes } from './routes/routes';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 // import { otpRateLimit, authRateLimit } from './middleware/rateLimitMiddleware';
-import { authMiddleware, AuthRequest } from './middleware/authMiddleware';
+import { AuthRequest } from './middleware/authMiddleware';
 import { setupDocumentation, protectDocumentation } from './middleware/documentation';
+import { requireAuth } from './middleware/requireAuth';
 
 const app = express();
 const server = http.createServer(app);
@@ -30,9 +31,13 @@ const corsOptions = {
     "https://frontend-4tn2xd3a7-adi07289s-projects.vercel.app",
     "https://frontend-4q7ne2bs2-adi07289s-projects.vercel.app",
     process.env.FRONTEND_URL || "http://localhost:3000",
+    "http://127.0.0.1:3000",
     "http://localhost:3001",
+    "http://127.0.0.1:3001",
     "http://localhost:3002",
-    "http://localhost:3333"
+    "http://127.0.0.1:3002",
+    "http://localhost:3333",
+    "http://127.0.0.1:3333"
   ],
   credentials: true,
   optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
@@ -73,6 +78,22 @@ app.use(protectDocumentation());
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
+});
+
+app.use('/api', (req, res, next) => {
+  const publicPaths = new Set([
+    '/auth/send-register-otp',
+    '/auth/verify-register-otp',
+    '/auth/send-login-otp',
+    '/auth/verify-login-otp',
+  ]);
+
+  if (publicPaths.has(req.path)) {
+    next();
+    return;
+  }
+
+  requireAuth(req as AuthRequest, res, next);
 });
 
 // Register tsoa routes

@@ -1,12 +1,14 @@
 "use client";
 
+import { AxiosError } from 'axios';
 import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Badge, BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Navigation } from '@/components/navigation';
 import { evApi, QueueEntry, IdleSession } from '@/lib/ev-api';
+import { parkingApi, CurrentlyParkedVehicle, QuickSearchResult } from '@/lib/parking-api';
 import {
   Zap,
   Clock,
@@ -23,7 +25,10 @@ import {
 export default function EVChargingPage() {
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const [idleSessions, setIdleSessions] = useState<IdleSession[]>([]);
+  const [activeEVSessions, setActiveEVSessions] = useState<CurrentlyParkedVehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [vehicleSearchQuery, setVehicleSearchQuery] = useState('');
+  const [vehicleSearchResults, setVehicleSearchResults] = useState<QuickSearchResult[]>([]);
   const [vehicleIdInput, setVehicleIdInput] = useState('');
   const [sessionIdInput, setSessionIdInput] = useState('');
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -31,16 +36,19 @@ export default function EVChargingPage() {
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [queueData, idleData] = await Promise.all([
+      const [queueData, idleData, activeSessionsData] = await Promise.all([
         evApi.getQueue(),
         evApi.getIdleSessions(),
+        parkingApi.getCurrentlyParkedVehicles({ vehicleType: 'EV', limit: 50 }),
       ]);
       setQueue(queueData.queue);
       setIdleSessions(idleData.sessions);
+      setActiveEVSessions(activeSessionsData.vehicles);
     } catch (error) {
       console.error('Failed to fetch EV data:', error);
       setQueue([]);
       setIdleSessions([]);
+      setActiveEVSessions([]);
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +63,31 @@ export default function EVChargingPage() {
     setTimeout(() => setActionMessage(null), 5000);
   };
 
+  const searchVehicles = useCallback(async (query: string) => {
+    const trimmedQuery = query.trim();
+
+    if (trimmedQuery.length < 2) {
+      setVehicleSearchResults([]);
+      return;
+    }
+
+    try {
+      const results = await parkingApi.quickSearch(trimmedQuery);
+      setVehicleSearchResults(results.filter((vehicle) => vehicle.vehicleType === 'EV'));
+    } catch (error) {
+      console.error('Failed to search EV vehicles:', error);
+      setVehicleSearchResults([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      searchVehicles(vehicleSearchQuery);
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchVehicles, vehicleSearchQuery]);
+
   const handleJoinQueue = async () => {
     if (!vehicleIdInput.trim()) return;
     try {
@@ -62,10 +95,12 @@ export default function EVChargingPage() {
       showMessage(result.success ? 'success' : 'error', result.message);
       if (result.success) {
         setVehicleIdInput('');
+        setVehicleSearchQuery('');
+        setVehicleSearchResults([]);
         fetchData();
       }
-    } catch (error: any) {
-      showMessage('error', error.response?.data?.message || 'Failed to join queue');
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to join queue'));
     }
   };
 
@@ -74,8 +109,8 @@ export default function EVChargingPage() {
       const result = await evApi.notifyNext();
       showMessage(result.success ? 'success' : 'error', result.message);
       fetchData();
-    } catch (error: any) {
-      showMessage('error', error.response?.data?.message || 'Failed to notify');
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to notify'));
     }
   };
 
@@ -88,8 +123,8 @@ export default function EVChargingPage() {
         setSessionIdInput('');
         fetchData();
       }
-    } catch (error: any) {
-      showMessage('error', error.response?.data?.message || 'Failed to mark complete');
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to mark complete'));
     }
   };
 
@@ -98,12 +133,12 @@ export default function EVChargingPage() {
       const result = await evApi.leaveQueue(vehicleId);
       showMessage(result.success ? 'success' : 'error', result.message);
       fetchData();
-    } catch (error: any) {
-      showMessage('error', error.response?.data?.message || 'Failed to leave queue');
+    } catch (error: unknown) {
+      showMessage('error', getErrorMessage(error, 'Failed to leave queue'));
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: string): BadgeProps['variant'] => {
     switch (status) {
       case 'WAITING': return 'default';
       case 'NOTIFIED': return 'success';
@@ -194,16 +229,52 @@ export default function EVChargingPage() {
                 </CardTitle>
                 <CardDescription>Vehicles waiting for an EV charging slot</CardDescription>
               </CardHeader>
-              <CardContent>
-                {/* Join Queue */}
-                <div className="flex gap-2 mb-4">
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
                   <Input
-                    placeholder="Vehicle ID to add to queue"
-                    value={vehicleIdInput}
-                    onChange={(e) => setVehicleIdInput(e.target.value)}
+                    placeholder="Search EV by number plate"
+                    value={vehicleSearchQuery}
+                    onChange={(e) => setVehicleSearchQuery(e.target.value)}
                   />
-                  <Button onClick={handleJoinQueue} size="sm">Add</Button>
+
+                  {vehicleIdInput && (
+                    <div className="rounded-lg border bg-green-50 p-3 text-sm text-green-900">
+                      Selected vehicle ID: <span className="font-mono">{vehicleIdInput}</span>
+                    </div>
+                  )}
+
+                  {vehicleSearchResults.length > 0 && (
+                    <div className="space-y-2 rounded-lg border bg-white p-3">
+                      <p className="text-sm font-medium text-gray-700">Matching EV vehicles</p>
+                      {vehicleSearchResults.map((vehicle) => (
+                        <button
+                          key={vehicle.vehicleId}
+                          type="button"
+                          onClick={() => {
+                            setVehicleIdInput(vehicle.vehicleId);
+                            setVehicleSearchQuery(vehicle.numberPlate);
+                            setVehicleSearchResults([]);
+                          }}
+                          className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                            vehicleIdInput === vehicle.vehicleId
+                              ? 'border-green-400 bg-green-50'
+                              : 'border-gray-200 hover:border-green-300 hover:bg-green-50/40'
+                          }`}
+                        >
+                          <div className="font-medium text-gray-900">{vehicle.numberPlate}</div>
+                          <div className="font-mono text-xs text-gray-500">{vehicle.vehicleId}</div>
+                          <div className="text-xs text-gray-500">
+                            {vehicle.isCurrentlyParked ? `Currently parked in ${vehicle.currentSlot}` : 'Not currently parked'}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                <Button onClick={handleJoinQueue} size="sm" disabled={!vehicleIdInput.trim()}>
+                  Add Selected EV to Queue
+                </Button>
 
                 {/* Notify Next Button */}
                 <Button onClick={handleNotifyNext} variant="outline" className="mb-4 w-full" size="sm">
@@ -225,7 +296,7 @@ export default function EVChargingPage() {
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-sm">#{entry.position}</span>
                             <span className="font-medium">{entry.vehicleNumberPlate}</span>
-                            <Badge variant={getStatusBadgeVariant(entry.status) as any}>
+                            <Badge variant={getStatusBadgeVariant(entry.status)}>
                               {entry.status}
                             </Badge>
                           </div>
@@ -258,17 +329,48 @@ export default function EVChargingPage() {
                 </CardTitle>
                 <CardDescription>Vehicles fully charged but still occupying a charging slot</CardDescription>
               </CardHeader>
-              <CardContent>
-                {/* Mark Complete */}
-                <div className="flex gap-2 mb-4">
-                  <Input
-                    placeholder="Session ID to mark charging complete"
-                    value={sessionIdInput}
-                    onChange={(e) => setSessionIdInput(e.target.value)}
-                  />
-                  <Button onClick={handleMarkComplete} size="sm">Complete</Button>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Session ID to mark charging complete"
+                      value={sessionIdInput}
+                      onChange={(e) => setSessionIdInput(e.target.value)}
+                    />
+                    <Button onClick={handleMarkComplete} size="sm" disabled={!sessionIdInput.trim()}>
+                      Complete
+                    </Button>
+                  </div>
+
+                  {activeEVSessions.length > 0 && (
+                    <div className="space-y-2 rounded-lg border bg-white p-3">
+                      <p className="text-sm font-medium text-gray-700">Active EV sessions</p>
+                      {activeEVSessions.map((session) => (
+                        <div
+                          key={session.sessionId}
+                          className="flex flex-col gap-3 rounded-lg border border-gray-200 p-3 md:flex-row md:items-center md:justify-between"
+                        >
+                          <div>
+                            <div className="font-medium text-gray-900">{session.vehicle.numberPlate}</div>
+                            <div className="text-xs text-gray-500">Slot {session.slot.number}</div>
+                            <div className="font-mono text-xs text-gray-500">{session.sessionId}</div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSessionIdInput(session.sessionId);
+                            }}
+                          >
+                            Use This Session
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
+                {/* Idle sessions */}
                 {idleSessions.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <BatteryFull className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -285,6 +387,7 @@ export default function EVChargingPage() {
                           </Badge>
                         </div>
                         <div className="text-xs text-gray-600 mt-1 space-y-1">
+                          <div>Session ID: <span className="font-mono">{session.sessionId}</span></div>
                           <div>Slot: {session.slotNumber}</div>
                           <div>Idle for: {session.idleMinutes} minutes</div>
                           <div className="text-yellow-700 font-medium">
@@ -302,4 +405,12 @@ export default function EVChargingPage() {
       </main>
     </div>
   );
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    return error.response?.data?.message || fallback;
+  }
+
+  return fallback;
 }

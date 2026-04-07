@@ -9,9 +9,10 @@ import {
   SuccessResponse,
   Path,
   Body,
-  Query
+  Request
 } from 'tsoa';
 import { reservationSwapService } from '../services/reservationSwapService';
+import { AuthRequest } from '../middleware/authMiddleware';
 
 interface SwapResponse {
   success: boolean;
@@ -20,13 +21,8 @@ interface SwapResponse {
 }
 
 interface ListSwapRequest {
-  userId: string;
   sessionId: string;
   listingPrice: number;
-}
-
-interface ClaimSwapRequest {
-  userId: string;
 }
 
 @Route('api/swaps')
@@ -40,10 +36,20 @@ export class SwapController extends Controller {
   @Post('/')
   @SuccessResponse(201, 'Listing created')
   @Response(400, 'Invalid request')
-  public async listForSwap(@Body() requestBody: ListSwapRequest): Promise<SwapResponse> {
+  public async listForSwap(
+    @Body() requestBody: ListSwapRequest,
+    @Request() request: AuthRequest
+  ): Promise<SwapResponse> {
     try {
+      const authenticatedUserId = request.user?.userId;
+
+      if (!authenticatedUserId) {
+        this.setStatus(401);
+        return { success: false, message: 'Authentication required' };
+      }
+
       const result = await reservationSwapService.listForSwap(
-        requestBody.userId,
+        authenticatedUserId,
         requestBody.sessionId,
         requestBody.listingPrice
       );
@@ -97,10 +103,17 @@ export class SwapController extends Controller {
   @Response(400, 'Cannot claim swap')
   public async claimSwap(
     @Path() swapId: string,
-    @Body() requestBody: ClaimSwapRequest
+    @Request() request: AuthRequest
   ): Promise<SwapResponse> {
     try {
-      const result = await reservationSwapService.claimSwap(swapId, requestBody.userId);
+      const authenticatedUserId = request.user?.userId;
+
+      if (!authenticatedUserId) {
+        this.setStatus(401);
+        return { success: false, message: 'Authentication required' };
+      }
+
+      const result = await reservationSwapService.claimSwap(swapId, authenticatedUserId);
       if (!result.success) {
         this.setStatus(result.message.includes('not found') || result.message.includes('expired') ? 404 : 400);
       }
@@ -123,10 +136,17 @@ export class SwapController extends Controller {
   @Response(404, 'Listing not found')
   public async cancelListing(
     @Path() swapId: string,
-    @Query() userId: string
+    @Request() request: AuthRequest
   ): Promise<SwapResponse> {
     try {
-      const result = await reservationSwapService.cancelListing(swapId, userId);
+      const authenticatedUserId = request.user?.userId;
+
+      if (!authenticatedUserId) {
+        this.setStatus(401);
+        return { success: false, message: 'Authentication required' };
+      }
+
+      const result = await reservationSwapService.cancelListing(swapId, authenticatedUserId);
       if (!result.success) {
         this.setStatus(404);
       }
@@ -144,11 +164,18 @@ export class SwapController extends Controller {
    * Get user swap history
    * @summary Get all swap listings and claims for a specific user
    */
-  @Get('/history/{userId}')
+  @Get('/history/me')
   @SuccessResponse(200, 'History retrieved')
-  public async getUserHistory(@Path() userId: string): Promise<SwapResponse> {
+  public async getUserHistory(@Request() request: AuthRequest): Promise<SwapResponse> {
     try {
-      const history = await reservationSwapService.getUserSwapHistory(userId);
+      const authenticatedUserId = request.user?.userId;
+
+      if (!authenticatedUserId) {
+        this.setStatus(401);
+        return { success: false, message: 'Authentication required' };
+      }
+
+      const history = await reservationSwapService.getUserSwapHistory(authenticatedUserId);
       return {
         success: true,
         data: { history, total: history.length }

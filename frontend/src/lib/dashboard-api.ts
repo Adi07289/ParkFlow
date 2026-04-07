@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+import api from './api-client';
 
 // Dashboard API interfaces
 export interface DashboardStats {
@@ -68,32 +66,32 @@ export interface SlotAvailability {
 // API functions
 export const dashboardApi = {
   async getStats(): Promise<DashboardStats> {
-    const response = await axios.get(`${API_BASE_URL}/dashboard/stats`);
+    const response = await api.get('/dashboard/stats');
     return response.data.data;
   },
 
   async getRevenue(): Promise<RevenueStats> {
-    const response = await axios.get(`${API_BASE_URL}/dashboard/revenue`);
+    const response = await api.get('/dashboard/revenue');
     return response.data.data;
   },
 
   async getActivity(): Promise<ActivityStats> {
-    const response = await axios.get(`${API_BASE_URL}/dashboard/activity`);
+    const response = await api.get('/dashboard/activity');
     return response.data.data;
   },
 
   async getOccupancyTrends(): Promise<OccupancyTrend[]> {
-    const response = await axios.get(`${API_BASE_URL}/dashboard/occupancy-trends`);
+    const response = await api.get('/dashboard/occupancy-trends');
     return response.data.data;
   },
 
   async getRealtimeData(): Promise<RealtimeData> {
-    const response = await axios.get(`${API_BASE_URL}/dashboard/realtime`);
+    const response = await api.get('/dashboard/realtime');
     return response.data.data;
   },
 
   async getSlotAvailability(): Promise<SlotAvailability> {
-    const response = await axios.get(`${API_BASE_URL}/dashboard/slot-availability`);
+    const response = await api.get('/dashboard/slot-availability');
     return response.data.data;
   },
 };

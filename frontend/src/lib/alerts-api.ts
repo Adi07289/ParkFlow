@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api';
+import api from './api-client';
 
 export interface ParkingAlertItem {
   id: string;
@@ -44,22 +42,22 @@ export const alertsApi = {
     page?: number;
     limit?: number;
   }) {
-    const response = await axios.get(`${API_BASE_URL}/alerts`, { params });
+    const response = await api.get('/alerts', { params });
     return response.data.data;
   },
 
   async getAlertStats(periodDays: number = 7): Promise<AlertStats> {
-    const response = await axios.get(`${API_BASE_URL}/alerts/stats`, { params: { periodDays } });
+    const response = await api.get('/alerts/stats', { params: { periodDays } });
     return response.data.data;
   },
 
   async triggerScan() {
-    const response = await axios.post(`${API_BASE_URL}/alerts/scan`);
+    const response = await api.post('/alerts/scan');
     return response.data;
   },
 
   async resolveAlert(alertId: string, resolvedBy: string) {
-    const response = await axios.post(`${API_BASE_URL}/alerts/${alertId}/resolve`, { resolvedBy });
+    const response = await api.post(`/alerts/${alertId}/resolve`, { resolvedBy });
     return response.data;
   },
 
@@ -69,12 +67,12 @@ export const alertsApi = {
     severity: string;
     message: string;
   }) {
-    const response = await axios.post(`${API_BASE_URL}/alerts/manual`, data);
+    const response = await api.post('/alerts/manual', data);
     return response.data;
   },
 
   async getRepeatOffenders(threshold: number = 3): Promise<RepeatOffender[]> {
-    const response = await axios.get(`${API_BASE_URL}/alerts/offenders`, { params: { threshold } });
+    const response = await api.get('/alerts/offenders', { params: { threshold } });
     return response.data.data.offenders;
   },
 };
