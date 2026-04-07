@@ -22,6 +22,16 @@ import { Request as ExpressRequest } from 'express';
 @Route('api/auth')
 @Tags('Authentication')
 export class AuthController extends Controller {
+  private getCookieOptions() {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
+  }
 
   /**
    * Send OTP for user registration
@@ -56,13 +66,7 @@ export class AuthController extends Controller {
     if (!result.success) {
       this.setStatus(400);
     } else if (result.token && request.res) {
-      // Set cookie if token is present
-      request.res.cookie('token', result.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      });
+      request.res.cookie('token', result.token, this.getCookieOptions());
     }
     
     return result;
@@ -101,13 +105,7 @@ export class AuthController extends Controller {
     if (!result.success) {
       this.setStatus(400);
     } else if (result.token && request.res) {
-      // Set cookie if token is present
-      request.res.cookie('token', result.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      });
+      request.res.cookie('token', result.token, this.getCookieOptions());
     }
     
     return result;
@@ -173,11 +171,7 @@ export class AuthController extends Controller {
   public async logout(@Request() request: any): Promise<AuthResponse> {
     // Clear the cookie
     if (request.res) {
-      request.res.clearCookie('token', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-      });
+      request.res.clearCookie('token', this.getCookieOptions());
     }
     
     return {

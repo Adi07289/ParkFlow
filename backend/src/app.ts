@@ -24,21 +24,36 @@ setupDocumentation(app);
 // Security middleware disabled for now
 // app.use(helmet());
 
+const configuredOrigins = [
+  process.env.FRONTEND_URL,
+  ...(process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+];
+
+const allowedOrigins = new Set([
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001',
+  'http://localhost:3002',
+  'http://127.0.0.1:3002',
+  'http://localhost:3333',
+  'http://127.0.0.1:3333',
+  ...configuredOrigins,
+]);
+
 // CORS configuration
 const corsOptions = {
-  origin: [
-    "https://parkflow-frontend.vercel.app",
-    "https://frontend-4tn2xd3a7-adi07289s-projects.vercel.app",
-    "https://frontend-4q7ne2bs2-adi07289s-projects.vercel.app",
-    process.env.FRONTEND_URL || "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3001",
-    "http://127.0.0.1:3001",
-    "http://localhost:3002",
-    "http://127.0.0.1:3002",
-    "http://localhost:3333",
-    "http://127.0.0.1:3333"
-  ],
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   credentials: true,
   optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
