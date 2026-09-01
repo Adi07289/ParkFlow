@@ -149,6 +149,7 @@ class ParkingService {
             vehicleId: vehicle.id,
             slotId: assignedSlot.id,
             userId: data.userId,
+            createdByUserId: operatorId,
             billingType: data.billingType,
             status: SessionStatus.ACTIVE
           },
