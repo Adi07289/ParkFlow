@@ -162,8 +162,10 @@ class AnalyticsService {
         totalSlots: number;
         totalOccupiedTime: number;
         totalRevenue: number;
-        peakOccupancy: number;
         sessions: number;
+        // Clipped [start, end] of every session on a slot of this type,
+        // used to find how many slots were occupied at once.
+        intervals: { start: number; end: number }[];
       }>();
 
       const periodMs = end.getTime() - start.getTime();
@@ -174,42 +176,43 @@ class AnalyticsService {
             totalSlots: 0,
             totalOccupiedTime: 0,
             totalRevenue: 0,
-            peakOccupancy: 0,
-            sessions: 0
+            sessions: 0,
+            intervals: []
           });
         }
 
         const data = utilization.get(slot.slotType)!;
         data.totalSlots += 1;
 
-        // Calculate occupied time for this slot
-        let slotOccupiedTime = 0;
         slot.sessions.forEach(session => {
           const exitTime = session.exitTime || new Date(); // Use current time for active sessions
-          const occupiedMs = Math.min(exitTime.getTime(), end.getTime()) - Math.max(session.entryTime.getTime(), start.getTime());
+          const intervalStart = Math.max(session.entryTime.getTime(), start.getTime());
+          const intervalEnd = Math.min(exitTime.getTime(), end.getTime());
+          const occupiedMs = intervalEnd - intervalStart;
           if (occupiedMs > 0) {
-            slotOccupiedTime += occupiedMs;
+            data.totalOccupiedTime += occupiedMs;
             data.sessions += 1;
+            data.intervals.push({ start: intervalStart, end: intervalEnd });
             if (session.billingAmount) {
               data.totalRevenue += Number(session.billingAmount);
             }
           }
         });
-
-        data.totalOccupiedTime += slotOccupiedTime;
-        const slotOccupancy = periodMs > 0 ? (slotOccupiedTime / periodMs) * 100 : 0;
-        data.peakOccupancy = Math.max(data.peakOccupancy, slotOccupancy);
       });
 
       // Convert to result format
       const result: SlotUtilizationAnalytics[] = Array.from(utilization.entries()).map(([slotType, data]) => {
         const averageOccupancy = data.totalSlots > 0 ? (data.totalOccupiedTime / (data.totalSlots * periodMs)) * 100 : 0;
-        
+        // Peak occupancy = the most slots of this type ever occupied at the
+        // same instant, not any single slot's cumulative busy time.
+        const maxConcurrentSessions = this.maxConcurrentIntervals(data.intervals);
+        const peakOccupancy = data.totalSlots > 0 ? (maxConcurrentSessions / data.totalSlots) * 100 : 0;
+
         return {
           slotType,
           totalSlots: data.totalSlots,
           averageOccupancy: Math.round(averageOccupancy * 100) / 100,
-          peakOccupancy: Math.round(Math.min(100, data.peakOccupancy) * 100) / 100,
+          peakOccupancy: Math.round(Math.min(100, peakOccupancy) * 100) / 100,
           totalRevenue: Math.round(data.totalRevenue),
           utilizationRate: Math.round(averageOccupancy * 100) / 100,
           revenuePerSlot: data.totalSlots > 0 ? Math.round(data.totalRevenue / data.totalSlots) : 0
@@ -222,6 +225,32 @@ class AnalyticsService {
       console.error('Error getting slot utilization analytics:', error);
       throw error;
     }
+  }
+
+  /**
+   * Given a set of [start, end] intervals (ms epoch), return the maximum
+   * number that overlap at any single instant.
+   */
+  private maxConcurrentIntervals(intervals: { start: number; end: number }[]): number {
+    if (intervals.length === 0) return 0;
+
+    type Event = [time: number, delta: 1 | -1];
+    const events: Event[] = [];
+    intervals.forEach(({ start, end }) => {
+      events.push([start, 1], [end, -1]);
+    });
+
+    // At a tie, count the arrival before the departure so two sessions on
+    // different slots that meet at the same instant both count.
+    events.sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+
+    let concurrent = 0;
+    let peak = 0;
+    for (const [, delta] of events) {
+      concurrent += delta;
+      peak = Math.max(peak, concurrent);
+    }
+    return peak;
   }
 
   /**
