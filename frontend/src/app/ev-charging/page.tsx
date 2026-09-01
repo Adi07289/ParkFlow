@@ -1,7 +1,7 @@
 "use client";
 
 import { AxiosError } from 'axios';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,19 +36,31 @@ export default function EVChargingPage() {
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [queueData, idleData, activeSessionsData] = await Promise.all([
+      // Settle independently so one failed request doesn't wipe the panels that
+      // loaded successfully.
+      const [queueResult, idleResult, activeResult] = await Promise.allSettled([
         evApi.getQueue(),
         evApi.getIdleSessions(),
         parkingApi.getCurrentlyParkedVehicles({ vehicleType: 'EV', limit: 50 }),
       ]);
-      setQueue(queueData.queue);
-      setIdleSessions(idleData.sessions);
-      setActiveEVSessions(activeSessionsData.vehicles);
-    } catch (error) {
-      console.error('Failed to fetch EV data:', error);
-      setQueue([]);
-      setIdleSessions([]);
-      setActiveEVSessions([]);
+
+      if (queueResult.status === 'fulfilled') {
+        setQueue(queueResult.value.queue);
+      } else {
+        console.error('Failed to fetch EV queue:', queueResult.reason);
+      }
+
+      if (idleResult.status === 'fulfilled') {
+        setIdleSessions(idleResult.value.sessions);
+      } else {
+        console.error('Failed to fetch idle sessions:', idleResult.reason);
+      }
+
+      if (activeResult.status === 'fulfilled') {
+        setActiveEVSessions(activeResult.value.vehicles);
+      } else {
+        console.error('Failed to fetch active EV sessions:', activeResult.reason);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -63,8 +75,12 @@ export default function EVChargingPage() {
     setTimeout(() => setActionMessage(null), 5000);
   };
 
+  const searchRequestId = useRef(0);
+
   const searchVehicles = useCallback(async (query: string) => {
     const trimmedQuery = query.trim();
+    // Any newer call (or a clear) invalidates this one's result.
+    const requestId = ++searchRequestId.current;
 
     if (trimmedQuery.length < 2) {
       setVehicleSearchResults([]);
@@ -73,8 +89,10 @@ export default function EVChargingPage() {
 
     try {
       const results = await parkingApi.quickSearch(trimmedQuery);
+      if (requestId !== searchRequestId.current) return;
       setVehicleSearchResults(results.filter((vehicle) => vehicle.vehicleType === 'EV'));
     } catch (error) {
+      if (requestId !== searchRequestId.current) return;
       console.error('Failed to search EV vehicles:', error);
       setVehicleSearchResults([]);
     }
