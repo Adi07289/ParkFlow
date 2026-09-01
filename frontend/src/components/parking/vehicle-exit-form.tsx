@@ -17,6 +17,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { parkingApi } from '@/lib/parking-api';
+import { billingApi, BillingConfig } from '@/lib/billing-api';
 import { formatToISTDateTime } from '@/lib/time-utils';
 import { 
   Car, 
@@ -94,11 +95,20 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
   const [searchFilter, setSearchFilter] = useState('');
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>('all');
   const [showVehicleList, setShowVehicleList] = useState(true);
+  const [billingConfig, setBillingConfig] = useState<BillingConfig | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Load all current sessions on component mount
   useEffect(() => {
     fetchAllSessions();
+  }, []);
+
+  // Load live billing rates once, so the estimate below doesn't drift from
+  // whatever the backend is actually configured to charge.
+  useEffect(() => {
+    billingApi.getBillingConfig()
+      .then(setBillingConfig)
+      .catch((error) => console.error('Failed to load billing rates:', error));
   }, []);
 
   // Filter sessions based on search and vehicle type
@@ -247,6 +257,16 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
     }
   };
 
+  // Fallback tiers only cover the brief window before /billing/config
+  // resolves (or if that request fails) — must match the backend defaults.
+  const FALLBACK_HOURLY_RATES = [
+    { minHours: 0, maxHours: 1, rate: 50 },
+    { minHours: 1, maxHours: 3, rate: 100 },
+    { minHours: 3, maxHours: 6, rate: 150 },
+    { minHours: 6, maxHours: 24, rate: 200 },
+  ];
+  const FALLBACK_DAY_PASS_RATE = 150;
+
   const calculateEstimatedBilling = (session: ActiveSession) => {
     const entryTime = new Date(session.entryTime);
     const now = new Date();
@@ -254,13 +274,12 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
     const hours = Math.ceil(durationMs / (1000 * 60 * 60)); // Round up to next hour
 
     if (session.billingType === 'HOURLY') {
-      if (hours <= 1) return 50;
-      if (hours <= 3) return 100;
-      if (hours <= 6) return 150;
-      return 200;
+      const hourlyRates = billingConfig?.hourlyRates ?? FALLBACK_HOURLY_RATES;
+      const tier = hourlyRates.find(({ minHours, maxHours }) => hours > minHours && hours <= maxHours);
+      return tier?.rate ?? hourlyRates[hourlyRates.length - 1].rate;
     }
 
-    return 150;
+    return billingConfig?.dayPassRate ?? FALLBACK_DAY_PASS_RATE;
   };
 
   const formatParkingDuration = (entryTime: string) => {
