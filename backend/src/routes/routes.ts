@@ -2074,6 +2074,7 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsNotificationController_getNotifications: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
                 unreadOnly: {"in":"query","name":"unreadOnly","dataType":"boolean"},
                 type: {"in":"query","name":"type","dataType":"union","subSchemas":[{"dataType":"enum","enums":["overstay"]},{"dataType":"enum","enums":["revenue"]},{"dataType":"enum","enums":["system"]},{"dataType":"enum","enums":["maintenance"]}]},
                 limit: {"default":20,"in":"query","name":"limit","dataType":"double"},
@@ -2106,6 +2107,7 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsNotificationController_getNotificationCount: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.get('/api/notifications/count',
             ...(fetchMiddlewares<RequestHandler>(NotificationController)),
@@ -2136,6 +2138,7 @@ export function RegisterRoutes(app: Router) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsNotificationController_markNotificationAsRead: Record<string, TsoaRoute.ParameterSchema> = {
                 notificationId: {"in":"path","name":"notificationId","required":true,"dataType":"string"},
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.post('/api/notifications/:notificationId/mark-read',
             ...(fetchMiddlewares<RequestHandler>(NotificationController)),
@@ -2165,6 +2168,7 @@ export function RegisterRoutes(app: Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsNotificationController_markAllNotificationsAsRead: Record<string, TsoaRoute.ParameterSchema> = {
+                request: {"in":"request","name":"request","required":true,"dataType":"object"},
         };
         app.post('/api/notifications/mark-all-read',
             ...(fetchMiddlewares<RequestHandler>(NotificationController)),

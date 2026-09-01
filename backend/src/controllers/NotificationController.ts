@@ -7,10 +7,12 @@ import {
   Response,
   SuccessResponse,
   Query,
-  Path
+  Path,
+  Request
 } from 'tsoa';
 import { createClient } from 'redis';
 import { overstayService } from '../services/overstayService';
+import { AuthRequest } from '../middleware/authMiddleware';
 
 interface NotificationResponse {
   success: boolean;
@@ -43,15 +45,17 @@ redis.connect().catch(console.error);
 @Route('api/notifications')
 @Tags('Notifications')
 export class NotificationController extends Controller {
-  private readonly READ_NOTIFICATIONS_KEY = 'notifications:read';
+  private readNotificationsKey(userId: string): string {
+    return `notifications:read:${userId}`;
+  }
 
   private buildOverstayNotificationId(sessionId: string): string {
     return `overstay-${sessionId}`;
   }
 
-  private async getReadNotificationIds(): Promise<Set<string>> {
+  private async getReadNotificationIds(userId: string): Promise<Set<string>> {
     try {
-      const ids = await redis.sMembers(this.READ_NOTIFICATIONS_KEY);
+      const ids = await redis.sMembers(this.readNotificationsKey(userId));
       return new Set(ids);
     } catch (error) {
       console.error('Failed to load read notification IDs:', error);
@@ -59,13 +63,13 @@ export class NotificationController extends Controller {
     }
   }
 
-  private async markNotificationIdsAsRead(notificationIds: string[]): Promise<void> {
+  private async markNotificationIdsAsRead(userId: string, notificationIds: string[]): Promise<void> {
     if (notificationIds.length === 0) {
       return;
     }
 
     try {
-      await redis.sAdd(this.READ_NOTIFICATIONS_KEY, notificationIds);
+      await redis.sAdd(this.readNotificationsKey(userId), notificationIds);
     } catch (error) {
       console.error('Failed to persist read notifications:', error);
       throw error;
@@ -79,14 +83,20 @@ export class NotificationController extends Controller {
   @Get('/')
   @SuccessResponse(200, 'Notifications retrieved successfully')
   public async getNotifications(
+    @Request() request: AuthRequest,
     @Query() unreadOnly?: boolean,
     @Query() type?: 'overstay' | 'revenue' | 'system' | 'maintenance',
     @Query() limit: number = 20
   ): Promise<NotificationResponse> {
+    const userId = request.user?.userId;
+    if (!userId) {
+      this.setStatus(401);
+      return { success: false, message: 'Authentication required' };
+    }
     try {
       // Get overstay alerts
       const overstayAlerts = await overstayService.getOverstayAlerts();
-      const readNotificationIds = await this.getReadNotificationIds();
+      const readNotificationIds = await this.getReadNotificationIds(userId);
       
       // Convert overstay alerts to notifications (ONLY REAL DATA)
       const overstayNotifications: MockNotification[] = overstayAlerts.map(alert => ({
@@ -145,10 +155,17 @@ export class NotificationController extends Controller {
    */
   @Get('/count')
   @SuccessResponse(200, 'Notification count retrieved successfully')
-  public async getNotificationCount(): Promise<NotificationResponse> {
+  public async getNotificationCount(
+    @Request() request: AuthRequest
+  ): Promise<NotificationResponse> {
+    const userId = request.user?.userId;
+    if (!userId) {
+      this.setStatus(401);
+      return { success: false, message: 'Authentication required' };
+    }
     try {
       const overstayAlerts = await overstayService.getOverstayAlerts();
-      const readNotificationIds = await this.getReadNotificationIds();
+      const readNotificationIds = await this.getReadNotificationIds(userId);
       const unreadOverstayCount = overstayAlerts.filter(
         (alert) => !readNotificationIds.has(this.buildOverstayNotificationId(alert.sessionId))
       ).length;
@@ -190,10 +207,16 @@ export class NotificationController extends Controller {
   @SuccessResponse(200, 'Notification marked as read')
   @Response(404, 'Notification not found')
   public async markNotificationAsRead(
-    @Path() notificationId: string
+    @Path() notificationId: string,
+    @Request() request: AuthRequest
   ): Promise<NotificationResponse> {
+    const userId = request.user?.userId;
+    if (!userId) {
+      this.setStatus(401);
+      return { success: false, message: 'Authentication required' };
+    }
     try {
-      await this.markNotificationIdsAsRead([notificationId]);
+      await this.markNotificationIdsAsRead(userId, [notificationId]);
       
       return {
         success: true,
@@ -214,10 +237,18 @@ export class NotificationController extends Controller {
    */
   @Post('/mark-all-read')
   @SuccessResponse(200, 'All notifications marked as read')
-  public async markAllNotificationsAsRead(): Promise<NotificationResponse> {
+  public async markAllNotificationsAsRead(
+    @Request() request: AuthRequest
+  ): Promise<NotificationResponse> {
+    const userId = request.user?.userId;
+    if (!userId) {
+      this.setStatus(401);
+      return { success: false, message: 'Authentication required' };
+    }
     try {
       const overstayAlerts = await overstayService.getOverstayAlerts();
       await this.markNotificationIdsAsRead(
+        userId,
         overstayAlerts.map((alert) => this.buildOverstayNotificationId(alert.sessionId))
       );
       
