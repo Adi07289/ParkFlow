@@ -20,9 +20,11 @@ export function middleware(request: NextRequest) {
   ];
   const authRoutes = ['/auth/login', '/auth/register'];
 
-  // Check if current path is protected
-  const isProtectedRoute = protectedRoutes.some(route => 
-    pathname.startsWith(route)
+  // Check if current path is protected. Match the route itself or a
+  // trailing-slash descendant (`/parking`, `/parking/details`) — not any
+  // path that merely starts with the same characters (`/parking-lot`).
+  const isProtectedRoute = protectedRoutes.some(route =>
+    pathname === route || pathname.startsWith(`${route}/`)
   );
 
   // Check if current path is an auth route

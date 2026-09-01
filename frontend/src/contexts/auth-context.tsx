@@ -153,7 +153,7 @@ function isProtectedPath(pathname: string): boolean {
     '/subscriptions',
     '/swaps',
     '/users',
-  ].some((route) => pathname.startsWith(route));
+  ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
