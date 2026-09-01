@@ -8,10 +8,12 @@ import {
   Response,
   SuccessResponse,
   Query,
-  Path
+  Path,
+  Request
 } from 'tsoa';
 import { VehicleType, BillingType } from '@prisma/client';
 import { parkingService } from '../services/parkingService';
+import { AuthRequest } from '../middleware/authMiddleware';
 
 interface VehicleEntryRequest {
   numberPlate: string;
@@ -121,14 +123,22 @@ export class ParkingController extends Controller {
   @Post('/entry')
   @SuccessResponse(200, 'Vehicle entry registered successfully')
   @Response(400, 'Invalid request or no available slots')
-  public async registerVehicleEntry(@Body() requestBody: VehicleEntryRequest): Promise<VehicleEntryResponse> {
+  public async registerVehicleEntry(
+    @Body() requestBody: VehicleEntryRequest,
+    @Request() request: AuthRequest
+  ): Promise<VehicleEntryResponse> {
+    const operatorId = request.user?.userId;
+    if (!operatorId) {
+      this.setStatus(401);
+      return { success: false, message: 'Authentication required' };
+    }
     try {
-      const result = await parkingService.registerVehicleEntry(requestBody);
-      
+      const result = await parkingService.registerVehicleEntry(requestBody, operatorId);
+
       if (!result.success) {
         this.setStatus(400);
       }
-      
+
       return result;
     } catch (error) {
       this.setStatus(500);

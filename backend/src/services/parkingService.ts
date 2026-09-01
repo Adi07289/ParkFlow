@@ -29,7 +29,7 @@ interface HistoryFilters {
 }
 
 class ParkingService {
-  async registerVehicleEntry(data: VehicleEntryRequest) {
+  async registerVehicleEntry(data: VehicleEntryRequest, operatorId: string) {
     try {
       // Check if vehicle already has an active session
       const activeSession = await prisma.parkingSession.findFirst({
@@ -52,15 +52,29 @@ class ParkingService {
 
       let slotAssignmentResult;
 
+      if (data.userId && data.userId !== operatorId) {
+        // Only operators/admins may attribute a session (and its subscription,
+        // loyalty and swap benefits) to another account.
+        const operator = await prisma.user.findUnique({ where: { id: operatorId } });
+        const canAssignOthers = operator?.role === 'OPERATOR' || operator?.role === 'ADMIN';
+
+        if (!canAssignOthers) {
+          return {
+            success: false,
+            message: 'Not authorized to assign this session to another user'
+          };
+        }
+      }
+
       if (data.userId) {
-        const user = await prisma.user.findUnique({
+        const targetUser = await prisma.user.findUnique({
           where: { id: data.userId }
         });
 
-        if (!user) {
+        if (!targetUser || !targetUser.isActive) {
           return {
             success: false,
-            message: 'Selected user not found'
+            message: 'Selected user not found or inactive'
           };
         }
       }
