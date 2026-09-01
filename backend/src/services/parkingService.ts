@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { VehicleType, BillingType, SlotStatus, SessionStatus, SlotType } from '@prisma/client';
+import { VehicleType, BillingType, SlotStatus, SessionStatus, SlotType, ReservationSwapStatus } from '@prisma/client';
 import { slotService } from './slotService';
 import { billingService } from './billingService';
 import { subscriptionService } from './subscriptionService';
@@ -228,6 +228,16 @@ class ParkingService {
         await tx.parkingSlot.update({
           where: { id: activeSession.slotId },
           data: { status: SlotStatus.AVAILABLE }
+        });
+
+        // Retire any open swap listings for this session so they can't be
+        // claimed after the vehicle has left.
+        await tx.reservationSwap.updateMany({
+          where: {
+            sessionId: activeSession.id,
+            status: ReservationSwapStatus.LISTED
+          },
+          data: { status: ReservationSwapStatus.EXPIRED }
         });
       });
 
