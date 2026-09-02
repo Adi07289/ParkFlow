@@ -125,7 +125,7 @@ export function OTPInput({
       {otp.map((digit, index) => (
         <Input
           key={index}
-          ref={(ref) => (inputRefs.current[index] = ref)}
+          ref={(ref) => { inputRefs.current[index] = ref; }}
           type="text"
           inputMode="numeric"
           maxLength={1}

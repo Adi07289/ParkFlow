@@ -75,7 +75,7 @@ const DialogDescription: React.FC<{ className?: string; children: React.ReactNod
   </p>
 )
 
-const DialogClose: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const DialogClose: React.FC<{ asChild?: boolean; children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>
 }
 
