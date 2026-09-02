@@ -240,9 +240,9 @@ class AnalyticsService {
       events.push([start, 1], [end, -1]);
     });
 
-    // At a tie, count the arrival before the departure so two sessions on
-    // different slots that meet at the same instant both count.
-    events.sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+    // At a tie, process the departure before the arrival: a session ending
+    // exactly as another begins is a slot hand-off, not two occupied at once.
+    events.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
 
     let concurrent = 0;
     let peak = 0;

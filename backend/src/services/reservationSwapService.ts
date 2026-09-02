@@ -182,8 +182,8 @@ class ReservationSwapService {
       }
 
       if (new Date() > swap.expiresAt) {
-        await prisma.reservationSwap.update({
-          where: { id: swapId },
+        await prisma.reservationSwap.updateMany({
+          where: { id: swapId, status: ReservationSwapStatus.LISTED },
           data: { status: ReservationSwapStatus.EXPIRED }
         });
         return { success: false, message: 'This listing has expired' };
@@ -196,7 +196,11 @@ class ReservationSwapService {
           // Atomically flip LISTED -> CLAIMED. A zero count means a concurrent
           // claimant already took this listing.
           const claim = await tx.reservationSwap.updateMany({
-            where: { id: swapId, status: ReservationSwapStatus.LISTED },
+            where: {
+              id: swapId,
+              status: ReservationSwapStatus.LISTED,
+              expiresAt: { gt: claimedAt }
+            },
             data: {
               status: ReservationSwapStatus.CLAIMED,
               claimedByUserId: userId,
@@ -205,7 +209,7 @@ class ReservationSwapService {
           });
 
           if (claim.count === 0) {
-            throw new SwapConflictError('Swap listing not found or already claimed');
+            throw new SwapConflictError('Swap listing not found, already claimed, or expired');
           }
 
           // Transfer ownership only while the session is still the original
@@ -268,10 +272,14 @@ class ReservationSwapService {
         return { success: false, message: 'Active listing not found or you are not the owner' };
       }
 
-      await prisma.reservationSwap.update({
-        where: { id: swapId },
+      const cancelled = await prisma.reservationSwap.updateMany({
+        where: { id: swapId, status: ReservationSwapStatus.LISTED },
         data: { status: ReservationSwapStatus.CANCELLED }
       });
+
+      if (cancelled.count === 0) {
+        return { success: false, message: 'Listing is no longer active' };
+      }
 
       return { success: true, message: 'Listing cancelled' };
     } catch (error) {

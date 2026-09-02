@@ -274,7 +274,8 @@ export function VehicleExitForm({ onSuccess, isLoading, setIsLoading, disabled =
     const hours = Math.ceil(durationMs / (1000 * 60 * 60)); // Round up to next hour
 
     if (session.billingType === 'HOURLY') {
-      const hourlyRates = billingConfig?.hourlyRates ?? FALLBACK_HOURLY_RATES;
+      const configured = billingConfig?.hourlyRates;
+      const hourlyRates = configured && configured.length > 0 ? configured : FALLBACK_HOURLY_RATES;
       const tier = hourlyRates.find(({ minHours, maxHours }) => hours > minHours && hours <= maxHours);
       return tier?.rate ?? hourlyRates[hourlyRates.length - 1].rate;
     }
