@@ -4,20 +4,33 @@ services:
     runtime: node
     rootDir: backend
     plan: free
-    buildCommand: npm install
-    startCommand: npx prisma migrate deploy && node dist/index.js
+    # NODE_ENV=production is set below, so force dev deps in for the build
+    # (tsc / tsoa / ts-node are needed to compile and generate routes).
+    buildCommand: npm install --include=dev && npm run build
+    # migrate must succeed; seed is best-effort (it is idempotent) so a seed
+    # hiccup never blocks the API from coming up.
+    startCommand: npx prisma migrate deploy && (npx prisma db seed || echo "seed skipped") && node dist/index.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "20"
       - key: DATABASE_URL
         fromDatabase:
           name: parkflow-postgres
           property: connectionString
-      - key: FRONTEND_URL
-        sync: false
       - key: JWT_SECRET
         generateValue: true
+      # Set after the Vercel frontend is deployed, to its exact prod URL
+      # e.g. https://parkflow-frontend.vercel.app  (used for CORS)
+      - key: FRONTEND_URL
+        sync: false
+      # Upstash (or any) Redis connection string — required for login OTP
+      # e.g. rediss://default:<pass>@<host>.upstash.io:6379
+      - key: REDIS_URL
+        sync: false
+      # Transactional email for OTP delivery (Resend, Mailtrap, SendGrid, ...)
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -29,8 +42,6 @@ services:
       - key: SMTP_PASS
         sync: false
       - key: SMTP_FROM
-        sync: false
-      - key: REDIS_URL
         sync: false
 
 databases:
