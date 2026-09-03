@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { VehicleType, BillingType, SlotStatus, SessionStatus, SlotType } from '@prisma/client';
+import { VehicleType, BillingType, SlotStatus, SessionStatus, SlotType, ReservationSwapStatus } from '@prisma/client';
 import { slotService } from './slotService';
 import { billingService } from './billingService';
 import { subscriptionService } from './subscriptionService';
@@ -29,7 +29,7 @@ interface HistoryFilters {
 }
 
 class ParkingService {
-  async registerVehicleEntry(data: VehicleEntryRequest) {
+  async registerVehicleEntry(data: VehicleEntryRequest, operatorId: string) {
     try {
       // Check if vehicle already has an active session
       const activeSession = await prisma.parkingSession.findFirst({
@@ -52,15 +52,29 @@ class ParkingService {
 
       let slotAssignmentResult;
 
+      if (data.userId && data.userId !== operatorId) {
+        // Only operators/admins may attribute a session (and its subscription,
+        // loyalty and swap benefits) to another account.
+        const operator = await prisma.user.findUnique({ where: { id: operatorId } });
+        const canAssignOthers = operator?.role === 'OPERATOR' || operator?.role === 'ADMIN';
+
+        if (!canAssignOthers) {
+          return {
+            success: false,
+            message: 'Not authorized to assign this session to another user'
+          };
+        }
+      }
+
       if (data.userId) {
-        const user = await prisma.user.findUnique({
+        const targetUser = await prisma.user.findUnique({
           where: { id: data.userId }
         });
 
-        if (!user) {
+        if (!targetUser || !targetUser.isActive) {
           return {
             success: false,
-            message: 'Selected user not found'
+            message: 'Selected user not found or inactive'
           };
         }
       }
@@ -135,6 +149,7 @@ class ParkingService {
             vehicleId: vehicle.id,
             slotId: assignedSlot.id,
             userId: data.userId,
+            createdByUserId: operatorId,
             billingType: data.billingType,
             status: SessionStatus.ACTIVE
           },
@@ -228,6 +243,16 @@ class ParkingService {
         await tx.parkingSlot.update({
           where: { id: activeSession.slotId },
           data: { status: SlotStatus.AVAILABLE }
+        });
+
+        // Retire any open swap listings for this session so they can't be
+        // claimed after the vehicle has left.
+        await tx.reservationSwap.updateMany({
+          where: {
+            sessionId: activeSession.id,
+            status: ReservationSwapStatus.LISTED
+          },
+          data: { status: ReservationSwapStatus.EXPIRED }
         });
       });
 

@@ -5,6 +5,9 @@ import { subscriptionService } from './subscriptionService';
 
 const prisma = new PrismaClient();
 
+/** Raised inside the claim transaction when another claimant won the race. */
+class SwapConflictError extends Error {}
+
 class ReservationSwapService {
   private readonly DEFAULT_LISTING_EXPIRY_HOURS = 4; // Listings expire after 4 hours
 
@@ -179,8 +182,8 @@ class ReservationSwapService {
       }
 
       if (new Date() > swap.expiresAt) {
-        await prisma.reservationSwap.update({
-          where: { id: swapId },
+        await prisma.reservationSwap.updateMany({
+          where: { id: swapId, status: ReservationSwapStatus.LISTED },
           data: { status: ReservationSwapStatus.EXPIRED }
         });
         return { success: false, message: 'This listing has expired' };
@@ -188,21 +191,49 @@ class ReservationSwapService {
 
       const claimedAt = new Date();
 
-      await prisma.$transaction(async (tx) => {
-        await tx.parkingSession.update({
-          where: { id: swap.sessionId },
-          data: { userId }
-        });
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Atomically flip LISTED -> CLAIMED. A zero count means a concurrent
+          // claimant already took this listing.
+          const claim = await tx.reservationSwap.updateMany({
+            where: {
+              id: swapId,
+              status: ReservationSwapStatus.LISTED,
+              expiresAt: { gt: claimedAt }
+            },
+            data: {
+              status: ReservationSwapStatus.CLAIMED,
+              claimedByUserId: userId,
+              claimedAt
+            }
+          });
 
-        await tx.reservationSwap.update({
-          where: { id: swapId },
-          data: {
-            status: ReservationSwapStatus.CLAIMED,
-            claimedByUserId: userId,
-            claimedAt
+          if (claim.count === 0) {
+            throw new SwapConflictError('Swap listing not found, already claimed, or expired');
+          }
+
+          // Transfer ownership only while the session is still the original
+          // owner's and active, so a stale listing can't move a completed or
+          // already-transferred session.
+          const moved = await tx.parkingSession.updateMany({
+            where: {
+              id: swap.sessionId,
+              userId: swap.originalUserId,
+              status: SessionStatus.ACTIVE
+            },
+            data: { userId }
+          });
+
+          if (moved.count === 0) {
+            throw new SwapConflictError('This listing is no longer backed by an owned active session');
           }
         });
-      });
+      } catch (error) {
+        if (error instanceof SwapConflictError) {
+          return { success: false, message: error.message };
+        }
+        throw error;
+      }
 
       return {
         success: true,
@@ -241,10 +272,14 @@ class ReservationSwapService {
         return { success: false, message: 'Active listing not found or you are not the owner' };
       }
 
-      await prisma.reservationSwap.update({
-        where: { id: swapId },
+      const cancelled = await prisma.reservationSwap.updateMany({
+        where: { id: swapId, status: ReservationSwapStatus.LISTED },
         data: { status: ReservationSwapStatus.CANCELLED }
       });
+
+      if (cancelled.count === 0) {
+        return { success: false, message: 'Listing is no longer active' };
+      }
 
       return { success: true, message: 'Listing cancelled' };
     } catch (error) {

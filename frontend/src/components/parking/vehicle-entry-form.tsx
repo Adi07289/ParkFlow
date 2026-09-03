@@ -117,12 +117,17 @@ export function VehicleEntryForm({ onSuccess, isLoading, setIsLoading, disabled 
       return;
     }
 
+    // validateForm() already guarantees this; the guard narrows the type
+    // from `EntryVehicleType | ''` for the API call below.
+    const { vehicleType } = formData;
+    if (!vehicleType) return;
+
     setIsLoading(true);
-    
+
     try {
       const requestData = {
         numberPlate: formData.numberPlate.trim().toUpperCase(),
-        vehicleType: formData.vehicleType,
+        vehicleType,
         billingType: formData.billingType,
         ...(formData.userId ? { userId: formData.userId } : {}),
         ...(assignmentMode === 'manual' && formData.slotId ? { slotId: formData.slotId } : {})

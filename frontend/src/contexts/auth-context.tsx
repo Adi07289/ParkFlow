@@ -42,31 +42,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       const response = await authApi.getCurrentUser();
-      if (response.success && response.user) {
-        setUser(response.user);
-
-        if (pathname?.startsWith('/auth/')) {
-          router.replace('/dashboard');
-        }
-      } else {
-        setUser(null);
-        if (pathname && isProtectedPath(pathname)) {
-          router.replace('/auth/login');
-        }
-      }
+      setUser(response.success && response.user ? response.user : null);
     } catch {
       setUser(null);
-      if (pathname && isProtectedPath(pathname)) {
-        router.replace('/auth/login');
-      }
     } finally {
       setLoading(false);
     }
-  }, [pathname, router]);
+  }, []);
 
+  // Resolve the current user once on mount (and on explicit refreshUser).
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Handle auth-based redirects off the resolved state, without refetching on
+  // every navigation.
+  useEffect(() => {
+    if (loading || !pathname) return;
+
+    if (user && pathname.startsWith('/auth/')) {
+      router.replace('/dashboard');
+      return;
+    }
+
+    if (!user && isProtectedPath(pathname)) {
+      router.replace('/auth/login');
+    }
+  }, [loading, pathname, router, user]);
 
   const login = async (email: string, otp: string): Promise<boolean> => {
     try {
@@ -151,7 +153,7 @@ function isProtectedPath(pathname: string): boolean {
     '/subscriptions',
     '/swaps',
     '/users',
-  ].some((route) => pathname.startsWith(route));
+  ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {

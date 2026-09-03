@@ -44,9 +44,9 @@ export default function SwapsPage() {
 
       setSwaps(swapData);
 
-      const ownedSessions = currentSessions.vehicles.filter(
-        (session) => session.user?.id === user?.id
-      );
+      const ownedSessions = user?.id
+        ? currentSessions.vehicles.filter((session) => session.user?.id === user.id)
+        : [];
       setMySessions(ownedSessions);
       setMyHistory(history);
 

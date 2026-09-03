@@ -1,7 +1,7 @@
 "use client";
 
 import { AxiosError } from 'axios';
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,10 +69,17 @@ function SubscriptionPageContent() {
     init();
   }, [fetchTiers, fetchUsers]);
 
+  const didInitLookup = useRef(false);
+
   useEffect(() => {
+    // Seed the lookup once: prefer an explicit ?userId=, else fall back to the
+    // signed-in user. Later quick-selects must not be reset by this effect.
+    if (didInitLookup.current) return;
+
     const queryUserId = searchParams.get('userId')?.trim();
 
     if (queryUserId) {
+      didInitLookup.current = true;
       setUserIdInput(queryUserId);
       setLookupUserId(queryUserId);
       fetchSubscription(queryUserId);
@@ -80,6 +87,7 @@ function SubscriptionPageContent() {
     }
 
     if (user?.id && !lookupUserId && !userIdInput) {
+      didInitLookup.current = true;
       setUserIdInput(user.id);
       setLookupUserId(user.id);
       fetchSubscription(user.id);
