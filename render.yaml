@@ -4,6 +4,7 @@ services:
     runtime: node
     rootDir: backend
     plan: free
+    region: ohio  # co-locate with the Neon Postgres (AWS US East 2 / Ohio)
     # NODE_ENV=production is set below, so force dev deps in for the build
     # (tsc / tsoa / ts-node are needed to compile and generate routes).
     buildCommand: npm install --include=dev && npm run build
