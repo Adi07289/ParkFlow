@@ -16,6 +16,23 @@ export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
   private readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
   private readonly OTP_EXPIRY = 300; // 5 minutes
+  // When on, the OTP is returned in the API response (and email failure is
+  // non-fatal) so the app can work without a deliverable email domain.
+  private readonly DEMO_MODE = process.env.DEMO_MODE === 'true';
+
+  private buildSendOtpResponse(
+    otp: string,
+    emailResult: { success: boolean; message: string },
+  ): SendOTPResponse {
+    if (this.DEMO_MODE) {
+      return {
+        success: true,
+        message: `Demo mode — your code is ${otp}${emailResult.success ? ' (also emailed)' : ''}`,
+        otp,
+      };
+    }
+    return { success: emailResult.success, message: emailResult.message };
+  }
 
   async sendRegisterOTP(email: string): Promise<SendOTPResponse> {
     try {
@@ -38,9 +55,11 @@ export class AuthService {
       const otpKey = `otp:register:${email}`;
       await redis.setEx(otpKey, this.OTP_EXPIRY, otp);
 
-      const emailResult = await emailService.sendOTPEmail(email, otp, 'register');
+      const emailResult = await emailService
+        .sendOTPEmail(email, otp, 'register')
+        .catch(() => ({ success: false, message: 'Failed to send OTP email' }));
 
-      if (!emailResult.success) {
+      if (!emailResult.success && !this.DEMO_MODE) {
         await redis.del(otpKey);
         return {
           success: false,
@@ -48,10 +67,7 @@ export class AuthService {
         };
       }
 
-      return {
-        success: true,
-        message: emailResult.message
-      };
+      return this.buildSendOtpResponse(otp, emailResult);
     } catch (error) {
       console.error('Error sending register OTP:', error);
       return {
@@ -139,9 +155,11 @@ export class AuthService {
       const otpKey = `otp:login:${email}`;
       await redis.setEx(otpKey, this.OTP_EXPIRY, otp);
 
-      const emailResult = await emailService.sendOTPEmail(email, otp, 'login');
+      const emailResult = await emailService
+        .sendOTPEmail(email, otp, 'login')
+        .catch(() => ({ success: false, message: 'Failed to send OTP email' }));
 
-      if (!emailResult.success) {
+      if (!emailResult.success && !this.DEMO_MODE) {
         await redis.del(otpKey);
         return {
           success: false,
@@ -149,10 +167,7 @@ export class AuthService {
         };
       }
 
-      return {
-        success: true,
-        message: emailResult.message
-      };
+      return this.buildSendOtpResponse(otp, emailResult);
     } catch (error) {
       console.error('Error sending login OTP:', error);
       return {

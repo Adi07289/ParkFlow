@@ -39,7 +39,8 @@ export default function RegisterPage() {
       return;
     }
 
-    await sendOTP(email.toLowerCase().trim(), 'register');
+    const demoOtp = await sendOTP(email.toLowerCase().trim(), 'register');
+    if (demoOtp) setEnteredOTP(demoOtp);
   };
 
   const handleVerifyOTP = async () => {
@@ -74,8 +75,8 @@ export default function RegisterPage() {
 
   const handleResendOTP = async () => {
     if (cooldown === 0) {
-      await sendOTP(email.toLowerCase().trim(), 'register');
-      setEnteredOTP('');
+      const demoOtp = await sendOTP(email.toLowerCase().trim(), 'register');
+      setEnteredOTP(demoOtp ?? '');
     }
   };
 

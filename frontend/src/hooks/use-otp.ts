@@ -9,7 +9,7 @@ interface UseOTPReturn {
   sendingOTP: boolean;
   otpSent: boolean;
   cooldown: number;
-  sendOTP: (email: string, type: 'register' | 'login') => Promise<void>;
+  sendOTP: (email: string, type: 'register' | 'login') => Promise<string | undefined>;
   resetOTP: () => void;
 }
 
@@ -18,10 +18,10 @@ export function useOTP(): UseOTPReturn {
   const [otpSent, setOtpSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  const sendOTP = async (email: string, type: 'register' | 'login') => {
+  const sendOTP = async (email: string, type: 'register' | 'login'): Promise<string | undefined> => {
     if (cooldown > 0) {
       toast.error(`Please wait ${cooldown} seconds before requesting another OTP`);
-      return;
+      return undefined;
     }
 
     try {
@@ -37,7 +37,7 @@ export function useOTP(): UseOTPReturn {
       if (response.success) {
         setOtpSent(true);
         toast.success(response.message || 'OTP sent successfully!');
-        
+
         // Start cooldown timer
         setCooldown(60);
         const timer = setInterval(() => {
@@ -49,6 +49,8 @@ export function useOTP(): UseOTPReturn {
             return prev - 1;
           });
         }, 1000);
+
+        return response.otp;
       } else {
         toast.error(response.message || 'Failed to send OTP');
       }
@@ -59,6 +61,8 @@ export function useOTP(): UseOTPReturn {
     } finally {
       setSendingOTP(false);
     }
+
+    return undefined;
   };
 
   const resetOTP = () => {

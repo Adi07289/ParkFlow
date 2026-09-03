@@ -5,6 +5,8 @@ export interface SendOTPRequest {
 export interface SendOTPResponse {
   success: boolean;
   message: string;
+  /** Populated only when DEMO_MODE is on, so the code can be shown in-app. */
+  otp?: string;
 }
 
 export interface VerifyOTPRequest {
