@@ -31,7 +31,8 @@ services:
       # e.g. rediss://default:<pass>@<host>.upstash.io:6379
       - key: REDIS_URL
         sync: false
-      # Transactional email for OTP delivery (Resend, Mailtrap, SendGrid, ...)
+      # Transactional email for OTP delivery. NOTE: Render blocks outbound
+      # SMTP ports 25/465/587 — use port 2525 (Brevo/Mailgun/SMTP2GO support it).
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
