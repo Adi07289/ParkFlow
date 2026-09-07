@@ -7,8 +7,6 @@ export interface SendOTPRequest {
 export interface SendOTPResponse {
   success: boolean;
   message: string;
-  /** Present only in demo mode — the code, so the app can show/prefill it. */
-  otp?: string;
 }
 
 export interface VerifyOTPRequest {
