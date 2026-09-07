@@ -16,19 +16,9 @@ export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
   private readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
   private readonly OTP_EXPIRY = 300; // 5 minutes
-  // When on, the OTP is a fixed value returned in the API response (and email
-  // failure is non-fatal) so the app works without a deliverable email domain.
+  // When on, the OTP is returned in the API response (and email failure is
+  // non-fatal) so the app can work without a deliverable email domain.
   private readonly DEMO_MODE = process.env.DEMO_MODE === 'true';
-  private readonly DEMO_OTP = '000000';
-
-  private generateOtp(): string {
-    return this.DEMO_MODE ? this.DEMO_OTP : Math.floor(100000 + Math.random() * 900000).toString();
-  }
-
-  private isOtpValid(storedOTP: string | null, otp: string): boolean {
-    if (this.DEMO_MODE && otp === this.DEMO_OTP) return true;
-    return !!storedOTP && storedOTP === otp;
-  }
 
   private buildSendOtpResponse(
     otp: string,
@@ -58,7 +48,8 @@ export class AuthService {
         };
       }
 
-      const otp = this.generateOtp();
+      // Generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
       
       // Store OTP in Redis
       const otpKey = `otp:register:${email}`;
@@ -104,7 +95,7 @@ export class AuthService {
       const otpKey = `otp:register:${email}`;
       const storedOTP = await redis.get(otpKey);
 
-      if (!this.isOtpValid(storedOTP, otp)) {
+      if (!storedOTP || storedOTP !== otp) {
         return {
           success: false,
           message: 'Invalid or expired OTP'
@@ -157,7 +148,8 @@ export class AuthService {
         };
       }
 
-      const otp = this.generateOtp();
+      // Generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
       
       // Store OTP in Redis
       const otpKey = `otp:login:${email}`;
@@ -203,7 +195,7 @@ export class AuthService {
       const otpKey = `otp:login:${email}`;
       const storedOTP = await redis.get(otpKey);
 
-      if (!this.isOtpValid(storedOTP, otp)) {
+      if (!storedOTP || storedOTP !== otp) {
         return {
           success: false,
           message: 'Invalid or expired OTP'
