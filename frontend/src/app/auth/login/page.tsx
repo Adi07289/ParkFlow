@@ -39,8 +39,7 @@ export default function LoginPage() {
       return;
     }
 
-    const demoOtp = await sendOTP(email.toLowerCase().trim(), 'login');
-    if (demoOtp) setEnteredOTP(demoOtp);
+    await sendOTP(email.toLowerCase().trim(), 'login');
   };
 
   const handleVerifyOTP = async () => {
@@ -75,8 +74,8 @@ export default function LoginPage() {
 
   const handleResendOTP = async () => {
     if (cooldown === 0) {
-      const demoOtp = await sendOTP(email.toLowerCase().trim(), 'login');
-      setEnteredOTP(demoOtp ?? '');
+      await sendOTP(email.toLowerCase().trim(), 'login');
+      setEnteredOTP('');
     }
   };
 

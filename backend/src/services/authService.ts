@@ -16,33 +16,6 @@ export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
   private readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
   private readonly OTP_EXPIRY = 300; // 5 minutes
-  // When on, the OTP is a fixed value returned in the API response (and email
-  // failure is non-fatal) so the app works without a deliverable email domain.
-  private readonly DEMO_MODE = process.env.DEMO_MODE === 'true';
-  private readonly DEMO_OTP = '000000';
-
-  private generateOtp(): string {
-    return this.DEMO_MODE ? this.DEMO_OTP : Math.floor(100000 + Math.random() * 900000).toString();
-  }
-
-  private isOtpValid(storedOTP: string | null, otp: string): boolean {
-    if (this.DEMO_MODE && otp === this.DEMO_OTP) return true;
-    return !!storedOTP && storedOTP === otp;
-  }
-
-  private buildSendOtpResponse(
-    otp: string,
-    emailResult: { success: boolean; message: string },
-  ): SendOTPResponse {
-    if (this.DEMO_MODE) {
-      return {
-        success: true,
-        message: `Demo mode — your code is ${otp}${emailResult.success ? ' (also emailed)' : ''}`,
-        otp,
-      };
-    }
-    return { success: emailResult.success, message: emailResult.message };
-  }
 
   async sendRegisterOTP(email: string): Promise<SendOTPResponse> {
     try {
@@ -58,17 +31,16 @@ export class AuthService {
         };
       }
 
-      const otp = this.generateOtp();
+      // Generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
       
       // Store OTP in Redis
       const otpKey = `otp:register:${email}`;
       await redis.setEx(otpKey, this.OTP_EXPIRY, otp);
 
-      const emailResult = await emailService
-        .sendOTPEmail(email, otp, 'register')
-        .catch(() => ({ success: false, message: 'Failed to send OTP email' }));
+      const emailResult = await emailService.sendOTPEmail(email, otp, 'register');
 
-      if (!emailResult.success && !this.DEMO_MODE) {
+      if (!emailResult.success) {
         await redis.del(otpKey);
         return {
           success: false,
@@ -76,7 +48,10 @@ export class AuthService {
         };
       }
 
-      return this.buildSendOtpResponse(otp, emailResult);
+      return {
+        success: true,
+        message: emailResult.message
+      };
     } catch (error) {
       console.error('Error sending register OTP:', error);
       return {
@@ -104,7 +79,7 @@ export class AuthService {
       const otpKey = `otp:register:${email}`;
       const storedOTP = await redis.get(otpKey);
 
-      if (!this.isOtpValid(storedOTP, otp)) {
+      if (!storedOTP || storedOTP !== otp) {
         return {
           success: false,
           message: 'Invalid or expired OTP'
@@ -157,17 +132,16 @@ export class AuthService {
         };
       }
 
-      const otp = this.generateOtp();
+      // Generate OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
       
       // Store OTP in Redis
       const otpKey = `otp:login:${email}`;
       await redis.setEx(otpKey, this.OTP_EXPIRY, otp);
 
-      const emailResult = await emailService
-        .sendOTPEmail(email, otp, 'login')
-        .catch(() => ({ success: false, message: 'Failed to send OTP email' }));
+      const emailResult = await emailService.sendOTPEmail(email, otp, 'login');
 
-      if (!emailResult.success && !this.DEMO_MODE) {
+      if (!emailResult.success) {
         await redis.del(otpKey);
         return {
           success: false,
@@ -175,7 +149,10 @@ export class AuthService {
         };
       }
 
-      return this.buildSendOtpResponse(otp, emailResult);
+      return {
+        success: true,
+        message: emailResult.message
+      };
     } catch (error) {
       console.error('Error sending login OTP:', error);
       return {
@@ -203,7 +180,7 @@ export class AuthService {
       const otpKey = `otp:login:${email}`;
       const storedOTP = await redis.get(otpKey);
 
-      if (!this.isOtpValid(storedOTP, otp)) {
+      if (!storedOTP || storedOTP !== otp) {
         return {
           success: false,
           message: 'Invalid or expired OTP'
