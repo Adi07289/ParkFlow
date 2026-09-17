@@ -18,6 +18,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// The real session cookie is set by the backend and scoped to the API's own
+// domain (frontend and backend are separate origins in this deployment), so
+// the browser never sends it to the frontend's domain. middleware.ts can
+// only see cookies on ITS OWN domain, so we mirror a same-origin marker
+// cookie here after a successful login/register purely to satisfy that
+// route guard. Every actual API call is still authorized by the backend's
+// own cross-origin cookie (or a Bearer token) — this cookie is not read by
+// the backend at all.
+const FRONTEND_AUTH_COOKIE = 'token';
+const FRONTEND_AUTH_MAX_AGE = 60 * 60 * 24 * 7; // 7 days — matches the backend JWT/cookie TTL
+
+function setFrontendAuthCookie(token: string) {
+  if (typeof document === 'undefined') return;
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${FRONTEND_AUTH_COOKIE}=${token}; path=/; max-age=${FRONTEND_AUTH_MAX_AGE}; SameSite=Lax${secure}`;
+}
+
+function clearFrontendAuthCookie() {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${FRONTEND_AUTH_COOKIE}=; path=/; max-age=0`;
+}
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -42,9 +64,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       const response = await authApi.getCurrentUser();
-      setUser(response.success && response.user ? response.user : null);
+      const resolvedUser = response.success && response.user ? response.user : null;
+      setUser(resolvedUser);
+      // The real (cross-origin) session is the source of truth. If it's gone,
+      // drop the frontend marker cookie too, or middleware would keep waving
+      // through a dashboard that immediately bounces back to login.
+      if (!resolvedUser) clearFrontendAuthCookie();
     } catch {
       setUser(null);
+      clearFrontendAuthCookie();
     } finally {
       setLoading(false);
     }
@@ -75,6 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authApi.verifyLoginOTP(email, otp);
       if (response.success && response.user) {
         setUser(response.user);
+        if (response.token) setFrontendAuthCookie(response.token);
         toast.success(response.message || 'Login successful!');
         return true;
       } else {
@@ -93,6 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authApi.verifyRegisterOTP(email, otp);
       if (response.success && response.user) {
         setUser(response.user);
+        if (response.token) setFrontendAuthCookie(response.token);
         toast.success(response.message || 'Registration successful!');
         return true;
       } else {
@@ -112,6 +142,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Logout error:', error);
     }
+    clearFrontendAuthCookie();
     setUser(null);
     toast.success('Logged out successfully');
     router.push('/auth/login');
